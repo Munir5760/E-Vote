@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useVoting } from "../../context/VotingContext";
-import { ShieldCheck, Lock, ArrowRight, X, Code } from "lucide-react";
+import { ShieldCheck, ArrowRight, X } from "lucide-react";
 
 export const AdminLogin = ({ onClose }) => {
   const { loginAsAdmin, schools } = useVoting();
@@ -24,14 +24,6 @@ export const AdminLogin = ({ onClose }) => {
     } else {
       if (onClose) onClose();
     }
-  };
-
-  const handleFill = (u, p, schoolId = "") => {
-    setUsername(u);
-    setPassword(p);
-    setTargetSchoolId(schoolId);
-    setErrorMsg("");
-    setHighlightSchoolSelect(false);
   };
 
   return (
@@ -129,18 +121,6 @@ export const AdminLogin = ({ onClose }) => {
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
-
-        {/* Developer Sandbox Login */}
-        <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs">
-          <span className="text-slate-500 font-medium">Platform Management</span>
-          <button
-            type="button"
-            onClick={() => handleFill("developer", "dev123", "")}
-            className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-amber-400 font-mono text-[11px] flex items-center gap-1.5 transition-colors"
-          >
-            <Code className="w-3 h-3 text-purple-400" /> Platform Developer
-          </button>
-        </div>
       </div>
     </div>
   );
