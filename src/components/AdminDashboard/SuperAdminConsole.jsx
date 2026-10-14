@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useVoting } from "../../context/VotingContext";
 import {
   Building2,
@@ -123,6 +123,19 @@ export const SuperAdminConsole = () => {
   const [adminUsername, setAdminUsername] = useState("");
   const [adminPassword, setAdminPassword] = useState(systemConfig?.defaultPassword || "123");
   const [formError, setFormError] = useState("");
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setShowSettingsModal(false);
+        setShowAddModal(false);
+        setConfirmActionModal(null);
+        setChangeAdminPasswordModal(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const handleAddSubmit = (e) => {
     e.preventDefault();
@@ -399,43 +412,55 @@ export const SuperAdminConsole = () => {
 
       {/* Confirmation Modal for Terminate / Delete */}
       {confirmActionModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-panel max-w-md w-full p-6 border-red-500/40 shadow-2xl relative animate-fadeIn space-y-4">
-            <button
-              onClick={() => setConfirmActionModal(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400 shrink-0">
-                <AlertTriangle className="w-6 h-6" />
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto"
+          onClick={() => setConfirmActionModal(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-panel max-w-md w-full my-auto max-h-[calc(100vh-2rem)] flex flex-col border-red-500/40 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden"
+          >
+            <div className="shrink-0 p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400 shrink-0">
+                  <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-white capitalize">
+                    Confirm {confirmActionModal.action} Account
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Target School: <span className="font-bold text-amber-400">{confirmActionModal.school.name}</span>
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-white capitalize">
-                  Confirm {confirmActionModal.action} Account
-                </h3>
-                <p className="text-xs text-slate-400">
-                  Target School: <span className="font-bold text-amber-400">{confirmActionModal.school.name}</span>
-                </p>
-              </div>
+              <button
+                type="button"
+                onClick={() => setConfirmActionModal(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <p className="text-xs text-slate-300 bg-slate-950 p-3 rounded-lg border border-slate-800 leading-relaxed">
-              {confirmActionModal.action === "terminate"
-                ? `Terminating '${confirmActionModal.school.name}' will block all voter logins and EC Admin dashboard access. You can re-activate the account anytime.`
-                : `Permanently deleting '${confirmActionModal.school.name}' will purge all registered voters, elections, candidates, and EC Admin accounts for this school. This action cannot be undone!`}
-            </p>
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 text-xs text-slate-300 leading-relaxed custom-modal-scroll">
+              <p className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+                {confirmActionModal.action === "terminate"
+                  ? `Terminating '${confirmActionModal.school.name}' will block all voter logins and EC Admin dashboard access. You can re-activate the account anytime.`
+                  : `Permanently deleting '${confirmActionModal.school.name}' will purge all registered voters, elections, candidates, and EC Admin accounts for this school. This action cannot be undone!`}
+              </p>
+            </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="shrink-0 px-4 sm:px-5 py-3 border-t border-slate-800 bg-slate-900/90 flex items-center justify-end gap-3">
               <button
+                type="button"
                 onClick={() => setConfirmActionModal(null)}
                 className="btn-secondary text-xs"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleConfirmAction}
                 className="btn-danger text-xs font-bold py-2 px-4 flex items-center gap-1.5"
               >
@@ -456,133 +481,155 @@ export const SuperAdminConsole = () => {
 
       {/* Add School Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="glass-panel max-w-lg w-full p-6 border-slate-700 shadow-2xl relative my-8 animate-fadeIn">
-            <h3 className="text-xl font-bold text-white mb-1">Provision New High School</h3>
-            <p className="text-xs text-slate-400 mb-4">
-              Set up school profile and generate EC Admin credentials. Each school requires a unique Voter School Code to isolate logins.
-            </p>
-
-            {formError && (
-              <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
-                {formError}
-              </div>
-            )}
-
-            <form onSubmit={handleAddSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                    Full School Name
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Wesley Girls' High School"
-                    value={schName}
-                    onChange={(e) => setSchName(e.target.value)}
-                    className="form-input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                    Short Alias
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Wey Gey Hey"
-                    value={schShortName}
-                    onChange={(e) => setSchShortName(e.target.value)}
-                    className="form-input"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase mb-1 flex items-center justify-between">
-                    <span>Unique School Code</span>
-                    <span className="text-[10px] text-amber-400 font-normal lowercase">(required)</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. WGH-2026"
-                    value={schCode}
-                    onChange={(e) => {
-                      setSchCode(e.target.value);
-                      setFormError("");
-                    }}
-                    className="form-input font-mono uppercase font-bold text-amber-400"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                    Location / Region
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Cape Coast"
-                    value={schLocation}
-                    onChange={(e) => setSchLocation(e.target.value)}
-                    className="form-input"
-                  />
-                </div>
-              </div>
-
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto"
+          onClick={() => setShowAddModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-panel max-w-lg w-full my-auto max-h-[calc(100vh-2rem)] sm:max-h-[90vh] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden"
+          >
+            {/* Pinned Modal Header */}
+            <div className="shrink-0 p-4 sm:p-6 pb-4 border-b border-slate-800 bg-slate-900/90 flex items-start justify-between gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                  School Motto
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Live Pure, Speak True, Right Wrong"
-                  value={schMotto}
-                  onChange={(e) => setSchMotto(e.target.value)}
-                  className="form-input"
-                />
+                <h3 className="text-lg sm:text-xl font-bold text-white font-display">Provision New High School</h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Set up school profile and generate EC Admin credentials. Each school requires a unique Voter School Code.
+                </p>
               </div>
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+                title="Close (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              {/* EC Admin Account Setup */}
-              <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
-                <div className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex justify-between items-center">
-                  <span>School EC Admin Login Credentials</span>
-                  <span className="text-[10px] text-slate-400 font-normal lowercase">(Isolated per tenant)</span>
+            <form onSubmit={handleAddSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-modal-scroll">
+                {formError && (
+                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
+                    {formError}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+                      Full School Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Wesley Girls' High School"
+                      value={schName}
+                      onChange={(e) => setSchName(e.target.value)}
+                      className="form-input"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+                      Short Alias
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Wey Gey Hey"
+                      value={schShortName}
+                      onChange={(e) => setSchShortName(e.target.value)}
+                      className="form-input"
+                      required
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">
-                      EC Admin Username
+                    <label className="block text-xs font-semibold text-slate-300 uppercase mb-1 flex items-center justify-between">
+                      <span>Unique School Code</span>
+                      <span className="text-[10px] text-amber-400 font-normal lowercase">(required)</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. admin or admin_wgh"
-                      value={adminUsername}
-                      onChange={(e) => setAdminUsername(e.target.value)}
-                      className="form-input text-xs font-mono"
+                      placeholder="e.g. WGH-2026"
+                      value={schCode}
+                      onChange={(e) => {
+                        setSchCode(e.target.value);
+                        setFormError("");
+                      }}
+                      className="form-input font-mono uppercase font-bold text-amber-400"
+                      required
                     />
-                    <div className="text-[10px] text-slate-500 mt-1">
-                      Same usernames (e.g. &lsquo;admin&rsquo;) are separated by Target School Code during login.
-                    </div>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">
-                      EC Admin Password
+                    <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+                      Location / Region
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. 1234"
-                      value={adminPassword}
-                      onChange={(e) => setAdminPassword(e.target.value)}
-                      className="form-input text-xs font-mono"
+                      placeholder="e.g. Cape Coast"
+                      value={schLocation}
+                      onChange={(e) => setSchLocation(e.target.value)}
+                      className="form-input"
                     />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+                    School Motto
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Live Pure, Speak True, Right Wrong"
+                    value={schMotto}
+                    onChange={(e) => setSchMotto(e.target.value)}
+                    className="form-input"
+                  />
+                </div>
+
+                {/* EC Admin Account Setup */}
+                <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
+                  <div className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex justify-between items-center">
+                    <span>School EC Admin Login Credentials</span>
+                    <span className="text-[10px] text-slate-400 font-normal lowercase">(Isolated per tenant)</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                        EC Admin Username
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. admin or admin_wgh"
+                        value={adminUsername}
+                        onChange={(e) => setAdminUsername(e.target.value)}
+                        className="form-input text-xs font-mono"
+                      />
+                      <div className="text-[10px] text-slate-500 mt-1">
+                        Same usernames (e.g. &lsquo;admin&rsquo;) are separated by Target School Code during login.
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                        EC Admin Password
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 1234"
+                        value={adminPassword}
+                        onChange={(e) => setAdminPassword(e.target.value)}
+                        className="form-input text-xs font-mono"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              {/* Pinned Modal Footer */}
+              <div className="shrink-0 px-4 sm:px-6 py-3.5 border-t border-slate-800 bg-slate-900/90 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
@@ -590,7 +637,7 @@ export const SuperAdminConsole = () => {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary text-xs">
+                <button type="submit" className="btn-primary text-xs font-bold">
                   Provision School Election
                 </button>
               </div>
@@ -601,58 +648,72 @@ export const SuperAdminConsole = () => {
 
       {/* Developer Settings & Customization Modal */}
       {showSettingsModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="glass-panel max-w-2xl w-full p-6 lg:p-8 border-slate-700 shadow-2xl relative my-8 animate-fadeIn space-y-6">
-            <button
-              onClick={() => setShowSettingsModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* Modal Header */}
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shadow-lg">
-                <Sliders className="w-6 h-6" />
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto"
+          onClick={() => setShowSettingsModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-panel max-w-2xl w-full my-auto max-h-[calc(100vh-2rem)] sm:max-h-[90vh] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden"
+          >
+            {/* Pinned Modal Header */}
+            <div className="shrink-0 p-4 sm:p-6 pb-4 border-b border-slate-800 bg-slate-900/90 flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shadow-lg shrink-0">
+                  <Sliders className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-xl font-bold text-white font-display">
+                    Developer Settings &amp; Theme Customization
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-slate-400">
+                    Update Super Admin credentials, default passwords, and background aesthetic palettes.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-xl font-bold text-white font-display">
-                  Developer Settings &amp; Theme Customization
-                </h3>
-                <p className="text-xs text-slate-400">
-                  Update Super Admin credentials, default passwords, and background aesthetic palettes.
-                </p>
+              <button
+                type="button"
+                onClick={() => setShowSettingsModal(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+                title="Close (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Pinned Tab Switcher */}
+            <div className="shrink-0 px-4 sm:px-6 py-2.5 bg-slate-900/60 border-b border-slate-800/80">
+              <div className="bg-slate-950/90 p-1.5 rounded-xl border border-slate-800 flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setSettingsTab("passwords")}
+                  className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                    settingsTab === "passwords"
+                      ? "bg-amber-500 text-slate-950 shadow-md"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <Lock className="w-4 h-4" />
+                  <span>Security &amp; Passwords</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSettingsTab("theme")}
+                  className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                    settingsTab === "theme"
+                      ? "bg-emerald-500 text-slate-950 shadow-md"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <Palette className="w-4 h-4" />
+                  <span>Background Colors &amp; Themes</span>
+                </button>
               </div>
             </div>
 
-            {/* Modal Tab Switcher */}
-            <div className="bg-slate-900/90 p-1.5 rounded-xl border border-slate-800 flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => setSettingsTab("passwords")}
-                className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                  settingsTab === "passwords"
-                    ? "bg-amber-500 text-slate-950 shadow-md"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                <Lock className="w-4 h-4" />
-                <span>Security &amp; Passwords</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSettingsTab("theme")}
-                className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                  settingsTab === "theme"
-                    ? "bg-emerald-500 text-slate-950 shadow-md"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                <Palette className="w-4 h-4" />
-                <span>Background Colors &amp; Themes</span>
-              </button>
-            </div>
+            {/* Scrollable Modal Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 custom-modal-scroll">
 
             {/* TAB 1: PASSWORDS & SECURITY */}
             {settingsTab === "passwords" && (
@@ -955,11 +1016,17 @@ export const SuperAdminConsole = () => {
               </div>
             )}
 
-            <div className="flex justify-end pt-3 border-t border-slate-800">
+            </div>
+
+            {/* Pinned Modal Footer */}
+            <div className="shrink-0 px-4 sm:px-6 py-3 border-t border-slate-800 bg-slate-900/90 flex items-center justify-between">
+              <span className="text-[11px] text-slate-400">
+                Click outside or press <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] text-slate-300">Esc</kbd> to close
+              </span>
               <button
                 type="button"
                 onClick={() => setShowSettingsModal(false)}
-                className="btn-secondary text-xs"
+                className="btn-secondary text-xs px-4 py-2"
               >
                 Close Settings
               </button>
@@ -970,45 +1037,56 @@ export const SuperAdminConsole = () => {
 
       {/* Change School Admin Password Modal */}
       {changeAdminPasswordModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-panel max-w-md w-full p-6 border-slate-700 shadow-2xl relative animate-fadeIn space-y-4">
-            <button
-              onClick={() => setChangeAdminPasswordModal(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
-                <KeyRound className="w-5 h-5" />
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto"
+          onClick={() => setChangeAdminPasswordModal(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-panel max-w-md w-full my-auto max-h-[calc(100vh-2rem)] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden"
+          >
+            <div className="shrink-0 p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
+                  <KeyRound className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    Change EC Admin Password
+                  </h3>
+                  <p className="text-xs text-amber-400 font-semibold">
+                    {changeAdminPasswordModal.name}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-base font-bold text-white">
-                  Change EC Admin Password
-                </h3>
-                <p className="text-xs text-amber-400 font-semibold">
-                  {changeAdminPasswordModal.name}
-                </p>
-              </div>
+              <button
+                type="button"
+                onClick={() => setChangeAdminPasswordModal(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <form onSubmit={handleUpdateSchoolAdminPasswordSubmit} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">
-                  New EC Admin Password
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter new password (e.g. 1234)"
-                  value={newSchoolAdminPass}
-                  onChange={(e) => setNewSchoolAdminPass(e.target.value)}
-                  className="form-input font-mono font-bold"
-                  required
-                />
+            <form onSubmit={handleUpdateSchoolAdminPasswordSubmit} className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 text-xs custom-modal-scroll">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">
+                    New EC Admin Password
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter new password (e.g. 1234)"
+                    value={newSchoolAdminPass}
+                    onChange={(e) => setNewSchoolAdminPass(e.target.value)}
+                    className="form-input font-mono font-bold"
+                    required
+                    autoFocus
+                  />
+                </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+              <div className="shrink-0 px-4 sm:px-5 py-3 border-t border-slate-800 bg-slate-900/90 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setChangeAdminPasswordModal(null)}

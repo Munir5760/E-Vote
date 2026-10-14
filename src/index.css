@@ -49,6 +49,21 @@ h1, h2, h3, h4, .font-display {
   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
 }
 
+/* Sleek custom scrollbars for modals */
+.custom-modal-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-modal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-modal-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+.custom-modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}
+
 .gradient-text-gold {
   background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
   -webkit-background-clip: text;
@@ -209,13 +224,13 @@ h1, h2, h3, h4, .font-display {
 }
 
 /* ==========================================================================
-   LIGHT MODE STYLING & TAILWIND ADAPTATION
+   LIGHT MODE STYLING & ACCESSIBLE HIGH-CONTRAST SYSTEM
    ========================================================================== */
 .theme-light, [data-theme="light"], html.theme-light {
   --bg-main: #f8fafc;
-  --bg-card: rgba(255, 255, 255, 0.95);
-  --bg-card-hover: rgba(241, 245, 249, 0.95);
-  --border-color: rgba(226, 232, 240, 0.9);
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --border-color: #e2e8f0;
   
   --text-primary: #0f172a;
   --text-secondary: #334155;
@@ -226,43 +241,62 @@ h1, h2, h3, h4, .font-display {
 html.theme-light body {
   background-color: #f8fafc !important;
   color: #0f172a !important;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.08) 0px, transparent 45%),
+    radial-gradient(at 100% 0%, rgba(245, 158, 11, 0.08) 0px, transparent 45%),
+    radial-gradient(at 50% 100%, rgba(30, 58, 138, 0.06) 0px, transparent 50%) !important;
 }
 
+/* Glass panels & cards in light mode */
 .theme-light .glass-panel {
-  background: rgba(255, 255, 255, 0.94) !important;
+  background: #ffffff !important;
   border-color: #e2e8f0 !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.04) !important;
 }
 
-.theme-light .bg-slate-950,
-.theme-light .bg-slate-950\/90,
-.theme-light .bg-slate-950\/85,
-.theme-light .bg-slate-950\/80 {
+/* Ensure all slate background card containers become clean white/off-white in light mode */
+.theme-light [class*="bg-slate-950"]:not([class*="fixed"]):not([class*="absolute"]):not([class*="btn-"]):not([class*="shadow-"]),
+.theme-light [class*="bg-slate-900"]:not([class*="fixed"]):not([class*="absolute"]):not([class*="btn-"]):not([class*="shadow-"]),
+.theme-light [class*="bg-slate-850"]:not([class*="fixed"]):not([class*="absolute"]):not([class*="btn-"]):not([class*="shadow-"]),
+.theme-light [class*="bg-slate-800"]:not([class*="fixed"]):not([class*="absolute"]):not([class*="btn-"]):not([class*="shadow-"]) {
   background-color: #ffffff !important;
   border-color: #e2e8f0 !important;
 }
 
-.theme-light .bg-slate-900,
+/* Soft grey card variants for nested items */
 .theme-light .bg-slate-900\/90,
 .theme-light .bg-slate-900\/80,
-.theme-light .bg-slate-900\/60 {
+.theme-light .bg-slate-900\/60,
+.theme-light .bg-slate-900\/50,
+.theme-light .bg-slate-950\/70,
+.theme-light .bg-slate-950\/60 {
   background-color: #f8fafc !important;
   border-color: #e2e8f0 !important;
 }
 
-.theme-light .bg-slate-850,
-.theme-light .hover\:bg-slate-800:hover,
-.theme-light .hover\:bg-slate-850:hover {
-  background-color: #f1f5f9 !important;
-}
-
-.theme-light .border-slate-800,
-.theme-light .border-slate-800\/80,
-.theme-light .border-slate-700 {
+/* Borders in light mode */
+.theme-light [class*="border-slate-800"],
+.theme-light [class*="border-slate-700"] {
   border-color: #e2e8f0 !important;
 }
 
-.theme-light .text-white {
+/* Dividers in light mode */
+.theme-light [class*="divide-slate-800"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: #e2e8f0 !important;
+}
+
+/* Interactive hover rows & cards */
+.theme-light tr:hover,
+.theme-light [class*="hover:bg-slate-900"]:hover,
+.theme-light [class*="hover:bg-slate-850"]:hover,
+.theme-light [class*="hover:bg-slate-800"]:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* Selective text colors in light mode (never break button text!) */
+.theme-light h1, .theme-light h2, .theme-light h3, .theme-light h4,
+.theme-light .font-display,
+.theme-light .text-white:not([class*="btn-"]):not([class*="bg-red"]):not([class*="bg-rose"]):not([class*="bg-emerald"]):not([class*="bg-blue"]):not([class*="bg-teal"]):not([class*="bg-slate-700"]):not(.badge) {
   color: #0f172a !important;
 }
 
@@ -279,9 +313,133 @@ html.theme-light body {
   color: #64748b !important;
 }
 
-.theme-light .form-input {
+/* Accessible color contrast adjustments on white backgrounds */
+.theme-light .text-amber-400,
+.theme-light .text-amber-300 {
+  color: #b45309 !important;
+}
+
+.theme-light .text-emerald-400,
+.theme-light .text-emerald-300 {
+  color: #047857 !important;
+}
+
+.theme-light .text-rose-400,
+.theme-light .text-rose-300 {
+  color: #be123c !important;
+}
+
+.theme-light .text-blue-400,
+.theme-light .text-blue-300 {
+  color: #1d4ed8 !important;
+}
+
+.theme-light .text-purple-400,
+.theme-light .text-purple-300 {
+  color: #6d28d9 !important;
+}
+
+.theme-light .text-teal-400,
+.theme-light .text-teal-300 {
+  color: #0f766e !important;
+}
+
+/* Button & Badge styling in Light Mode */
+.theme-light .btn-primary {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important;
+  color: #ffffff !important;
+}
+.theme-light .btn-primary * {
+  color: #ffffff !important;
+}
+
+.theme-light .btn-secondary {
+  background: #f1f5f9 !important;
+  color: #1e293b !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+.theme-light .btn-secondary:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
+}
+
+.theme-light .btn-gold {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.25) !important;
+}
+.theme-light .btn-gold * {
+  color: #ffffff !important;
+}
+
+/* Seal / Danger buttons in light mode */
+.theme-light .bg-red-500,
+.theme-light .bg-red-600,
+.theme-light .bg-rose-500,
+.theme-light .bg-rose-600 {
+  color: #ffffff !important;
+}
+.theme-light .bg-red-500 *,
+.theme-light .bg-red-600 * {
+  color: #ffffff !important;
+}
+
+/* Start / Live button in light mode */
+.theme-light .bg-emerald-500 {
+  background-color: #10b981 !important;
+  color: #ffffff !important;
+}
+.theme-light .bg-emerald-500 * {
+  color: #ffffff !important;
+}
+
+/* Inactive button in light mode */
+.theme-light .bg-slate-700 {
+  background-color: #334155 !important;
+  color: #fef08a !important;
+}
+.theme-light .bg-slate-700 * {
+  color: #fef08a !important;
+}
+
+/* Status badges in light mode */
+.theme-light .badge-live {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+  border-color: #86efac !important;
+}
+
+.theme-light .badge-paused {
+  background: #fef3c7 !important;
+  color: #b45309 !important;
+  border-color: #fde68a !important;
+}
+
+.theme-light .badge-ended {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+  border-color: #fca5a5 !important;
+}
+
+/* Dark gradient banners adaptation in light mode */
+.theme-light [class*="from-emerald-950"] {
+  background: linear-gradient(135deg, #ecfdf5 0%, #f8fafc 50%, #fef3c7 100%) !important;
+  border-color: #a7f3d0 !important;
+}
+
+/* Form inputs & selects in light mode */
+.theme-light .form-input,
+.theme-light select.form-input {
   background: #ffffff !important;
   border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.theme-light select option {
+  background: #ffffff !important;
   color: #0f172a !important;
 }
 
@@ -290,6 +448,7 @@ html.theme-light body {
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
 }
 
+/* Header & Footer in light mode */
 .theme-light header {
   background-color: rgba(255, 255, 255, 0.95) !important;
   border-bottom-color: #e2e8f0 !important;
@@ -299,3 +458,4 @@ html.theme-light body {
   background-color: rgba(248, 250, 252, 0.95) !important;
   border-top-color: #e2e8f0 !important;
 }
+

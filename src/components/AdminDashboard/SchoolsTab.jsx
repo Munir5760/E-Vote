@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useVoting } from "../../context/VotingContext";
 import {
   Building2,
@@ -7,7 +7,8 @@ import {
   MapPin,
   Sparkles,
   ArrowRight,
-  ShieldCheck
+  ShieldCheck,
+  X
 } from "lucide-react";
 
 export const SchoolsTab = () => {
@@ -22,6 +23,16 @@ export const SchoolsTab = () => {
   const [schLogo, setSchLogo] = useState(
     "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=150&auto=format&fit=crop&q=80"
   );
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setShowAddModal(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const handleAddSchoolSubmit = (e) => {
     e.preventDefault();
@@ -129,93 +140,116 @@ export const SchoolsTab = () => {
 
       {/* Add School Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-panel max-w-lg w-full p-6 border-slate-700 shadow-2xl relative animate-fadeIn">
-            <h3 className="text-xl font-bold text-white mb-4">Add Senior High School</h3>
-
-            <form onSubmit={handleAddSchoolSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                    Full School Name
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Wesley Girls' High School"
-                    value={schName}
-                    onChange={(e) => setSchName(e.target.value)}
-                    className="form-input"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                    Short Alias
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Wey Gey Hey"
-                    value={schShortName}
-                    onChange={(e) => setSchShortName(e.target.value)}
-                    className="form-input"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                    Location / Region
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Cape Coast, Central Region"
-                    value={schLocation}
-                    onChange={(e) => setSchLocation(e.target.value)}
-                    className="form-input"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                    School Code
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. WGH-2026"
-                    value={schCode}
-                    onChange={(e) => setSchCode(e.target.value)}
-                    className="form-input font-mono"
-                  />
-                </div>
-              </div>
-
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto"
+          onClick={() => setShowAddModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-panel max-w-lg w-full my-auto max-h-[calc(100vh-2rem)] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden"
+          >
+            {/* Pinned Header */}
+            <div className="shrink-0 p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 flex items-start justify-between gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                  School Motto
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Live Pure, Speak True, Right Wrong"
-                  value={schMotto}
-                  onChange={(e) => setSchMotto(e.target.value)}
-                  className="form-input"
-                />
+                <h3 className="text-base sm:text-lg font-bold text-white font-display">Add Senior High School</h3>
+                <p className="text-xs text-slate-400">Register a new institution to enable isolated tenant elections.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+                title="Close (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddSchoolSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 custom-modal-scroll">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+                      Full School Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Wesley Girls' High School"
+                      value={schName}
+                      onChange={(e) => setSchName(e.target.value)}
+                      className="form-input"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+                      Short Alias
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Wey Gey Hey"
+                      value={schShortName}
+                      onChange={(e) => setSchShortName(e.target.value)}
+                      className="form-input"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+                      Location / Region
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Cape Coast, Central Region"
+                      value={schLocation}
+                      onChange={(e) => setSchLocation(e.target.value)}
+                      className="form-input"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+                      School Code
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. WGH-2026"
+                      value={schCode}
+                      onChange={(e) => setSchCode(e.target.value)}
+                      className="form-input font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+                    School Motto
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Live Pure, Speak True, Right Wrong"
+                    value={schMotto}
+                    onChange={(e) => setSchMotto(e.target.value)}
+                    className="form-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+                    School Logo Image URL
+                  </label>
+                  <input
+                    type="url"
+                    value={schLogo}
+                    onChange={(e) => setSchLogo(e.target.value)}
+                    className="form-input text-xs font-mono"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                  School Logo Image URL
-                </label>
-                <input
-                  type="url"
-                  value={schLogo}
-                  onChange={(e) => setSchLogo(e.target.value)}
-                  className="form-input text-xs font-mono"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              {/* Pinned Footer */}
+              <div className="shrink-0 px-4 sm:px-5 py-3 border-t border-slate-800 bg-slate-900/90 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
@@ -223,7 +257,7 @@ export const SchoolsTab = () => {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary text-xs">
+                <button type="submit" className="btn-primary text-xs font-bold">
                   Create School Election
                 </button>
               </div>

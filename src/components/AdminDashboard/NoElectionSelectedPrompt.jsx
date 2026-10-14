@@ -12,7 +12,7 @@ export const NoElectionSelectedPrompt = ({ onOpenNewElectionModal }) => {
     voters,
   } = useVoting();
 
-  const schoolElections = elections.filter((e) => e.schoolId === activeSchool.id);
+  const schoolElections = (elections || []).filter((e) => e.schoolId === (activeSchool?.id || ""));
 
   return (
     <div className="glass-panel p-8 border-slate-800 text-center max-w-4xl mx-auto space-y-6 animate-fadeIn">
@@ -27,7 +27,7 @@ export const NoElectionSelectedPrompt = ({ onOpenNewElectionModal }) => {
         <p className="text-xs text-slate-400 leading-relaxed">
           Please select an election session from the dropdown above or choose from the
           available election sessions for{" "}
-          <strong className="text-amber-400">{activeSchool.name}</strong> below to manage
+          <strong className="text-amber-400">{activeSchool?.name || "School"}</strong> below to manage
           candidates, voters, and results.
         </p>
       </div>
@@ -35,7 +35,7 @@ export const NoElectionSelectedPrompt = ({ onOpenNewElectionModal }) => {
       {schoolElections.length === 0 ? (
         <div className="p-6 bg-slate-900/60 rounded-xl border border-dashed border-slate-700 text-xs text-slate-400 max-w-md mx-auto space-y-3">
           <AlertCircle className="w-6 h-6 text-amber-400 mx-auto" />
-          <p>No election sessions have been created for {activeSchool.name} yet.</p>
+          <p>No election sessions have been created for {activeSchool?.name || "School"} yet.</p>
           {onOpenNewElectionModal && (
             <button
               onClick={onOpenNewElectionModal}

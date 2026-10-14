@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { useVoting } from "../../context/VotingContext";
@@ -16,7 +16,8 @@ import {
   Lock,
   RefreshCw,
   Users,
-  FileText
+  FileText,
+  X
 } from "lucide-react";
 
 export const VoterRegisterTab = () => {
@@ -31,8 +32,8 @@ export const VoterRegisterTab = () => {
     adminResetStudentPassword,
   } = useVoting();
 
-  const electionVoters = voters.filter(
-    (v) => v.electionId === activeElection?.id || (!v.electionId && v.schoolId === activeSchool.id)
+  const electionVoters = (voters || []).filter(
+    (v) => v.electionId === activeElection?.id || (!v.electionId && v.schoolId === (activeSchool?.id || ""))
   );
 
   // Filters state
@@ -54,6 +55,17 @@ export const VoterRegisterTab = () => {
   // CSV Drag state
   const [dragActive, setDragActive] = useState(false);
   const [uploadMode, setUploadMode] = useState("append");
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setShowAddSingleModal(false);
+        setShowPrintCardsModal(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Universal Excel (.xlsx, .xls) & CSV Upload handler for current election
   const handleFileUpload = (file, targetForm = "AUTO") => {
@@ -109,7 +121,7 @@ export const VoterRegisterTab = () => {
           }
 
           if (jsonData && jsonData.length > 0) {
-            uploadVoterRegister(activeSchool.id, activeElection.id, jsonData, targetForm, uploadMode);
+            uploadVoterRegister(activeSchool?.id || "", activeElection?.id || "", jsonData, targetForm, uploadMode);
           } else {
             alert("No student data rows found in uploaded Excel worksheet.");
           }
@@ -126,7 +138,7 @@ export const VoterRegisterTab = () => {
         skipEmptyLines: true,
         complete: (results) => {
           if (results.data && results.data.length > 0) {
-            uploadVoterRegister(activeSchool.id, activeElection.id, results.data, targetForm, uploadMode);
+            uploadVoterRegister(activeSchool?.id || "", activeElection?.id || "", results.data, targetForm, uploadMode);
           } else {
             alert("No valid rows parsed from file. Please check file formatting.");
           }
@@ -140,7 +152,7 @@ export const VoterRegisterTab = () => {
 
   const handleDownloadSampleCSV = (formType = "ALL") => {
     let csvContent = "";
-    let fileName = `sample_voter_register_${activeSchool.shortName || 'School'}`;
+    let fileName = `sample_voter_register_${activeSchool?.shortName || 'School'}`;
 
     if (formType === "SHS 1") {
       csvContent =
@@ -193,8 +205,8 @@ export const VoterRegisterTab = () => {
     if (!indexNum || !fullName) return;
 
     const success = addVoter({
-      schoolId: activeSchool.id,
-      electionId: activeElection.id,
+      schoolId: activeSchool?.id || "",
+      electionId: activeElection?.id || "",
       indexNumber: indexNum,
       fullName,
       passwordPin: pin || "1234",
@@ -268,7 +280,7 @@ export const VoterRegisterTab = () => {
               <span>Voter Register Management</span>
             </h3>
             <p className="text-xs text-slate-400">
-              Upload Excel (.xlsx, .xls) or CSV class registers individually (SHS 1, SHS 2, SHS 3) or print credentials slips for {activeSchool.name}.
+              Upload Excel (.xlsx, .xls) or CSV class registers individually (SHS 1, SHS 2, SHS 3) or print credentials slips for {activeSchool?.name || "School"}.
             </p>
           </div>
 
@@ -597,11 +609,32 @@ export const VoterRegisterTab = () => {
 
       {/* Add Single Voter Modal */}
       {showAddSingleModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-panel max-w-md w-full p-6 border-slate-700 shadow-2xl relative animate-fadeIn">
-            <h3 className="text-xl font-bold text-white mb-4">Register Single Student</h3>
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto"
+          onClick={() => setShowAddSingleModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-panel max-w-md w-full my-auto max-h-[calc(100vh-2rem)] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden"
+          >
+            {/* Pinned Header */}
+            <div className="shrink-0 p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base sm:text-lg font-bold text-white font-display">Register Single Student</h3>
+                <p className="text-xs text-slate-400">Add an individual voter to this election's roll.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddSingleModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+                title="Close (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-            <form onSubmit={handleAddSingleSubmit} className="space-y-4">
+            <form onSubmit={handleAddSingleSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 custom-modal-scroll">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
                   Student Index Number
@@ -672,7 +705,10 @@ export const VoterRegisterTab = () => {
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              </div>
+
+              {/* Pinned Footer */}
+              <div className="shrink-0 px-4 sm:px-5 py-3 border-t border-slate-800 bg-slate-900/90 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowAddSingleModal(false)}
@@ -680,7 +716,7 @@ export const VoterRegisterTab = () => {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary text-xs">
+                <button type="submit" className="btn-primary text-xs font-bold">
                   Save Voter
                 </button>
               </div>
@@ -691,56 +727,83 @@ export const VoterRegisterTab = () => {
 
       {/* Print Voter Credentials Cards Modal */}
       {showPrintCardsModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="glass-panel max-w-3xl w-full p-6 border-slate-700 shadow-2xl relative my-8">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4 no-print">
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto"
+          onClick={() => setShowPrintCardsModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-panel max-w-4xl w-full my-auto max-h-[calc(100vh-2rem)] sm:max-h-[92vh] flex flex-col border-slate-700 shadow-2xl relative rounded-2xl overflow-hidden"
+          >
+            {/* Pinned Header */}
+            <div className="shrink-0 p-4 sm:p-6 border-b border-slate-800 bg-slate-900/90 flex items-center justify-between no-print gap-4">
               <div>
-                <h3 className="text-xl font-bold text-white">Printable Voter Credential Slips</h3>
-                <p className="text-xs text-slate-400">Class distribution slips for {activeSchool.name} students</p>
+                <h3 className="text-lg sm:text-xl font-bold text-white font-display">Printable Voter Credential Slips</h3>
+                <p className="text-xs text-slate-400">Class distribution slips for {activeSchool?.name || "School"} students</p>
               </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => window.print()} className="btn-gold text-xs">
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="btn-gold text-xs"
+                >
                   <Printer className="w-4 h-4" /> Print Slips Now
                 </button>
                 <button
+                  type="button"
                   onClick={() => setShowPrintCardsModal(false)}
-                  className="btn-secondary text-xs"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                  title="Close (Esc)"
                 >
-                  Close
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {electionVoters.map((vtr) => (
-                <div
-                  key={vtr.id}
-                  className="bg-white text-slate-950 p-3 rounded-lg border-2 border-slate-300 shadow-sm text-xs space-y-1 font-sans"
-                >
-                  <div className="font-bold text-[11px] border-b border-slate-200 pb-1 flex justify-between">
-                    <span>{activeSchool.shortName} ({activeElection?.code})</span>
-                    <span className="text-[9px] text-slate-500 font-mono">{vtr.form}</span>
+            {/* Scrollable Printable Cards Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-modal-scroll">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {electionVoters.map((vtr) => (
+                  <div
+                    key={vtr.id}
+                    className="bg-white text-slate-950 p-3 rounded-lg border-2 border-slate-300 shadow-sm text-xs space-y-1 font-sans"
+                  >
+                    <div className="font-bold text-[11px] border-b border-slate-200 pb-1 flex justify-between">
+                      <span>{activeSchool?.shortName || "School"} ({activeElection?.code})</span>
+                      <span className="text-[9px] text-slate-500 font-mono">{vtr.form}</span>
+                    </div>
+                    <div className="font-extrabold text-sm truncate">{vtr.fullName}</div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-slate-600">Election Code:</span>
+                      <span className="font-mono font-bold text-amber-800">{activeElection?.code}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-slate-600">Index:</span>
+                      <span className="font-mono font-bold text-emerald-800">{vtr.indexNumber}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-slate-600">Default Password:</span>
+                      <span className="font-mono font-bold text-blue-800">
+                        {vtr.isPasswordChanged ? "(Custom Password Set)" : vtr.passwordPin}
+                      </span>
+                    </div>
+                    <div className="text-[9px] text-slate-500 pt-1 border-t border-slate-200 truncate">
+                      Election: {activeElection?.title}
+                    </div>
                   </div>
-                  <div className="font-extrabold text-sm truncate">{vtr.fullName}</div>
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-600">Election Code:</span>
-                    <span className="font-mono font-bold text-amber-800">{activeElection?.code}</span>
-                  </div>
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-600">Index:</span>
-                    <span className="font-mono font-bold text-emerald-800">{vtr.indexNumber}</span>
-                  </div>
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-600">Default Password:</span>
-                    <span className="font-mono font-bold text-blue-800">
-                      {vtr.isPasswordChanged ? "(Custom Password Set)" : vtr.passwordPin}
-                    </span>
-                  </div>
-                  <div className="text-[9px] text-slate-500 pt-1 border-t border-slate-200 truncate">
-                    Election: {activeElection?.title}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            </div>
+
+            {/* Pinned Footer */}
+            <div className="shrink-0 px-4 sm:px-6 py-3 border-t border-slate-800 bg-slate-900/90 flex justify-end no-print">
+              <button
+                type="button"
+                onClick={() => setShowPrintCardsModal(false)}
+                className="btn-secondary text-xs px-4 py-2"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { VotingProvider, useVoting } from "./context/VotingContext";
 import { Header } from "./components/Header";
 import { VoterLogin } from "./components/VoterPortal/VoterLogin";
@@ -13,7 +13,19 @@ import { ShieldCheck, Lock, RefreshCw, Vote, Building2, KeyRound } from "lucide-
 const MainAppContent = () => {
   const { currentUser, resetAllData, activeSchool, theme, systemConfig } = useVoting();
   const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
-  const [portalMode, setPortalMode] = useState("student"); // 'student' | 'officer' | 'admin'
+  const [portalMode, setPortalMode] = useState(() => {
+    try {
+      return localStorage.getItem("gh_shs_portal_mode") || "student";
+    } catch {
+      return "student";
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("gh_shs_portal_mode", portalMode);
+    } catch {}
+  }, [portalMode]);
 
   const isAdminLoggedIn =
     currentUser?.role === "school_admin" ||

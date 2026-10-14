@@ -22,10 +22,9 @@ export class ErrorBoundary extends React.Component {
 
   handleClearData = () => {
     try {
-      localStorage.removeItem("gh_shs_evote_app_state_v7");
-    } catch (e) {
-      // ignore
-    }
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {}
     window.location.href = "/";
     window.location.reload();
   };

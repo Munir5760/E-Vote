@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useVoting } from "../../context/VotingContext";
 import {
   Plus,
@@ -58,6 +58,17 @@ export const CandidatesTab = () => {
   // New Position Form State
   const [posTitle, setPosTitle] = useState("");
   const [posDescription, setPosDescription] = useState("");
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setShowAddCandModal(false);
+        setShowAddPosModal(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const resetCandForm = () => {
     setCandName("");
@@ -235,11 +246,34 @@ export const CandidatesTab = () => {
 
       {/* Add Candidate Modal */}
       {showAddCandModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="glass-panel max-w-lg w-full p-6 border-slate-700 shadow-2xl relative my-8 animate-fadeIn">
-            <h3 className="text-xl font-bold text-white mb-4">Nominate New Candidate</h3>
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto"
+          onClick={() => setShowAddCandModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-panel max-w-lg w-full my-auto max-h-[calc(100vh-2rem)] sm:max-h-[90vh] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden"
+          >
+            {/* Pinned Header */}
+            <div className="shrink-0 p-4 sm:p-6 pb-4 border-b border-slate-800 bg-slate-900/90 flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg sm:text-xl font-bold text-white font-display">Nominate New Candidate</h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Configure ballot entry, profile details, and manifesto for student voting.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddCandModal(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+                title="Close (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-            <form onSubmit={handleAddCandidateSubmit} className="space-y-4">
+            <form onSubmit={handleAddCandidateSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-modal-scroll">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
                   Ballot Position
@@ -400,7 +434,10 @@ export const CandidatesTab = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              </div>
+
+              {/* Pinned Footer */}
+              <div className="shrink-0 px-4 sm:px-6 py-3.5 border-t border-slate-800 bg-slate-900/90 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowAddCandModal(false)}
@@ -408,7 +445,7 @@ export const CandidatesTab = () => {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary text-xs">
+                <button type="submit" className="btn-primary text-xs font-bold">
                   Save Candidate
                 </button>
               </div>
@@ -419,39 +456,56 @@ export const CandidatesTab = () => {
 
       {/* Add Position Modal */}
       {showAddPosModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-panel max-w-md w-full p-6 border-slate-700 shadow-2xl relative animate-fadeIn">
-            <h3 className="text-xl font-bold text-white mb-4">Create Prefectural Position</h3>
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto"
+          onClick={() => setShowAddPosModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-panel max-w-md w-full my-auto max-h-[calc(100vh-2rem)] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden"
+          >
+            <div className="shrink-0 p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 flex items-start justify-between gap-3">
+              <h3 className="text-base sm:text-lg font-bold text-white">Create Prefectural Position</h3>
+              <button
+                type="button"
+                onClick={() => setShowAddPosModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-            <form onSubmit={handleAddPositionSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                  Position Title
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Dining Hall Prefect"
-                  value={posTitle}
-                  onChange={(e) => setPosTitle(e.target.value)}
-                  className="form-input"
-                  required
-                />
+            <form onSubmit={handleAddPositionSubmit} className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 custom-modal-scroll">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+                    Position Title
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Dining Hall Prefect"
+                    value={posTitle}
+                    onChange={(e) => setPosTitle(e.target.value)}
+                    className="form-input"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+                    Role Description
+                  </label>
+                  <textarea
+                    rows="3"
+                    placeholder="Duties and responsibilities of this role..."
+                    value={posDescription}
+                    onChange={(e) => setPosDescription(e.target.value)}
+                    className="form-input"
+                  ></textarea>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                  Role Description
-                </label>
-                <textarea
-                  rows="3"
-                  placeholder="Duties and responsibilities of this role..."
-                  value={posDescription}
-                  onChange={(e) => setPosDescription(e.target.value)}
-                  className="form-input"
-                ></textarea>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="shrink-0 px-4 sm:px-5 py-3 border-t border-slate-800 bg-slate-900/90 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowAddPosModal(false)}
@@ -459,7 +513,7 @@ export const CandidatesTab = () => {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary text-xs">
+                <button type="submit" className="btn-primary text-xs font-bold">
                   Add Position
                 </button>
               </div>

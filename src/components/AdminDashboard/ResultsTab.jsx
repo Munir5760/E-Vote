@@ -20,14 +20,14 @@ export const ResultsTab = () => {
   const [selectedClassTab, setSelectedClassTab] = useState("ALL"); // ALL | SHS 1 | SHS 2 | SHS 3
   const [showCollationDisplay, setShowCollationDisplay] = useState(false);
 
-  const schoolPositions = positions.filter(
-    (p) => p.electionId === activeElection?.id || (p.schoolId === activeSchool.id && !p.electionId)
+  const schoolPositions = (positions || []).filter(
+    (p) => p.electionId === activeElection?.id || (p.schoolId === (activeSchool?.id || "") && !p.electionId)
   );
-  const schoolCandidates = candidates.filter(
-    (c) => c.electionId === activeElection?.id || (c.schoolId === activeSchool.id && !c.electionId)
+  const schoolCandidates = (candidates || []).filter(
+    (c) => c.electionId === activeElection?.id || (c.schoolId === (activeSchool?.id || "") && !c.electionId)
   );
-  const schoolVoters = voters.filter(
-    (v) => v.electionId === activeElection?.id || (!v.electionId && v.schoolId === activeSchool.id)
+  const schoolVoters = (voters || []).filter(
+    (v) => v.electionId === activeElection?.id || (!v.electionId && v.schoolId === (activeSchool?.id || ""))
   );
 
   const totalVoters = schoolVoters.length;

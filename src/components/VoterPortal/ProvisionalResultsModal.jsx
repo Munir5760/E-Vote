@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useVoting } from "../../context/VotingContext";
 import { X, BarChart3, Award, Sparkles, Building2, ShieldCheck, Users } from "lucide-react";
 
@@ -11,6 +11,17 @@ export const ProvisionalResultsModal = ({ school, onClose }) => {
   const selectedElection = schoolElections.find((e) => e.id === selectedElectionId) || schoolElections[0];
 
   const [selectedClassTab, setSelectedClassTab] = useState("ALL"); // ALL | SHS 1 | SHS 2 | SHS 3
+
+  // Close on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
 
   // Strictly filter by this specific selected election
   const schoolPositions = positions.filter(
@@ -37,30 +48,36 @@ export const ProvisionalResultsModal = ({ school, onClose }) => {
   const shs3Turnout = shs3Voters.filter((v) => v.hasVoted).length;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-start justify-center pt-16 pb-12 px-4 overflow-y-auto">
-      <div className="glass-panel max-w-2xl w-full border-slate-700 shadow-2xl relative my-auto animate-fadeIn overflow-hidden">
-        
-        {/* Modal Top Header Bar */}
-        <div className="bg-slate-900/95 px-6 py-5 border-b border-slate-800 flex items-center justify-between sticky top-0 z-20">
+    <div
+      className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="glass-panel max-w-2xl w-full my-auto max-h-[calc(100vh-2rem)] sm:max-h-[90vh] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden"
+      >
+        {/* Pinned Modal Top Header Bar */}
+        <div className="shrink-0 bg-slate-900/95 px-4 sm:px-6 py-4 border-b border-slate-800 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30 shrink-0">
               <BarChart3 className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-xl font-bold text-white font-display">Provisional Election Tally</h3>
-                <span className="badge badge-live">LIVE TALLY</span>
+                <h3 className="text-lg sm:text-xl font-bold text-white font-display">Provisional Election Tally</h3>
+                <span className="badge badge-live text-[10px]">LIVE TALLY</span>
               </div>
-              <p className="text-xs text-amber-400 font-semibold mt-0.5">
-                {school.name} • Session: {selectedElection?.title} ({selectedElection?.code})
+              <p className="text-xs text-amber-400 font-semibold mt-0.5 truncate max-w-xs sm:max-w-md">
+                {school.name} • {selectedElection?.title} ({selectedElection?.code})
               </p>
             </div>
           </div>
 
           <button
+            type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-            title="Close Tally View"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+            title="Close (Esc)"
           >
             <X className="w-5 h-5" />
           </button>
@@ -68,7 +85,7 @@ export const ProvisionalResultsModal = ({ school, onClose }) => {
 
         {/* Election Session Selector Dropdown if multiple elections exist */}
         {schoolElections.length > 1 && (
-          <div className="bg-slate-950 px-6 py-3 border-b border-slate-800 flex items-center justify-between text-xs">
+          <div className="shrink-0 bg-slate-950 px-4 sm:px-6 py-2.5 border-b border-slate-800 flex items-center justify-between text-xs">
             <span className="text-slate-400 font-bold uppercase tracking-wider">
               Select Election Session:
             </span>
@@ -86,7 +103,8 @@ export const ProvisionalResultsModal = ({ school, onClose }) => {
           </div>
         )}
 
-        <div className="p-6 lg:p-8 space-y-6">
+        {/* Scrollable Modal Body */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 custom-modal-scroll">
           {/* Class Turnout Quick Stats Grid */}
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center">
@@ -202,13 +220,22 @@ export const ProvisionalResultsModal = ({ school, onClose }) => {
               );
             })}
           </div>
-
-          <div className="pt-3 border-t border-slate-800 text-center text-xs text-slate-400 flex items-center justify-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Official Class-by-Class Provisional Tally for {school.name}</span>
-          </div>
         </div>
 
+        {/* Pinned Modal Footer */}
+        <div className="shrink-0 p-3 sm:p-4 border-t border-slate-800 bg-slate-900/90 flex items-center justify-between gap-3">
+          <div className="text-xs text-slate-400 flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="truncate">Official Class Provisional Tally • {school.name}</span>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-secondary text-xs sm:text-sm px-4 py-2 shrink-0"
+          >
+            Close Tally
+          </button>
+        </div>
       </div>
     </div>
   );

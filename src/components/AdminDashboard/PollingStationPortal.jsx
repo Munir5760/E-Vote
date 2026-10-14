@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useVoting } from "../../context/VotingContext";
 import {
   KeyRound,
@@ -62,6 +62,17 @@ export const PollingStationPortal = ({ onOpenTabletMode }) => {
   const [tableSearch, setTableSearch] = useState("");
   const [tableStatusFilter, setTableStatusFilter] = useState("ALL"); // ALL | PENDING_OTP | ACTIVE_OTP | VOTED
   const [tableLevelFilter, setTableLevelFilter] = useState("ALL");
+  // Close modals on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setIssuedSlip(null);
+        setShowChangePassModal(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const schoolElections = elections.filter((e) => e.schoolId === activeSchool?.id);
 
@@ -738,75 +749,93 @@ export const PollingStationPortal = ({ onOpenTabletMode }) => {
 
       {/* Official Voting Slip Modal (Ready for printing or handing to student) */}
       {issuedSlip && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0b1222] border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl relative text-center">
-            <button
-              onClick={() => setIssuedSlip(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* Official Slip Printable Area */}
-            <div id="printable-voting-slip" className="text-left bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4 shadow-inner">
-              <div className="border-b border-slate-800 pb-3 text-center">
-                <div className="text-[10px] font-black uppercase tracking-widest text-amber-400">
-                  GHANA SHS ELECTORAL COMMISSION
-                </div>
-                <div className="text-sm font-black text-white mt-0.5">
-                  Official One-Time Ballot Passcode
-                </div>
-                <div className="text-[10px] text-slate-400">
-                  {issuedSlip.election?.title} ({issuedSlip.election?.code})
-                </div>
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto"
+          onClick={() => setIssuedSlip(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#0b1222] border border-slate-700 max-w-md w-full my-auto max-h-[calc(100vh-2rem)] sm:max-h-[90vh] flex flex-col rounded-2xl shadow-2xl relative animate-fadeIn overflow-hidden"
+          >
+            {/* Pinned Modal Header */}
+            <div className="shrink-0 p-3.5 sm:p-4 border-b border-slate-800 bg-slate-900/90 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                <h3 className="font-bold text-white text-sm">Official One-Time Ballot Passcode</h3>
               </div>
+              <button
+                type="button"
+                onClick={() => setIssuedSlip(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+                title="Close (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              {/* Student Identification */}
-              <div className="grid grid-cols-2 gap-2 text-xs border-b border-slate-800 pb-3">
-                <div>
-                  <span className="text-[9px] text-slate-500 uppercase font-bold block">Voter Name</span>
-                  <span className="font-bold text-white">{issuedSlip.student?.fullName}</span>
+            {/* Scrollable Printable Slip Body */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-modal-scroll">
+              <div id="printable-voting-slip" className="text-left bg-slate-950 p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-4 shadow-inner">
+                <div className="border-b border-slate-800 pb-3 text-center">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-amber-400">
+                    GHANA SHS ELECTORAL COMMISSION
+                  </div>
+                  <div className="text-sm font-black text-white mt-0.5">
+                    Official One-Time Ballot Passcode
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    {issuedSlip.election?.title} ({issuedSlip.election?.code})
+                  </div>
                 </div>
-                <div>
-                  <span className="text-[9px] text-slate-500 uppercase font-bold block">Index Number</span>
-                  <span className="font-mono text-amber-400 font-bold">{issuedSlip.student?.indexNumber}</span>
-                </div>
-                <div>
-                  <span className="text-[9px] text-slate-500 uppercase font-bold block">Level / Class</span>
-                  <span className="text-slate-300">{issuedSlip.student?.form}</span>
-                </div>
-                <div>
-                  <span className="text-[9px] text-slate-500 uppercase font-bold block">Station Desk</span>
-                  <span className="text-slate-300">{stationName}</span>
-                </div>
-              </div>
 
-              {/* The OTP Big Card */}
-              <div className="bg-[#0a152d] border-2 border-emerald-500/60 rounded-xl p-4 text-center">
-                <span className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold block">
-                  ONE-TIME PASSWORD (OTP)
-                </span>
-                <div className="text-3xl font-mono font-black text-white tracking-widest mt-1 flex items-center justify-center gap-2">
-                  <span>{issuedSlip.otp}</span>
+                {/* Student Identification */}
+                <div className="grid grid-cols-2 gap-2 text-xs border-b border-slate-800 pb-3">
+                  <div>
+                    <span className="text-[9px] text-slate-500 uppercase font-bold block">Voter Name</span>
+                    <span className="font-bold text-white">{issuedSlip.student?.fullName}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-500 uppercase font-bold block">Index Number</span>
+                    <span className="font-mono text-amber-400 font-bold">{issuedSlip.student?.indexNumber}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-500 uppercase font-bold block">Level / Class</span>
+                    <span className="text-slate-300">{issuedSlip.student?.form}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-500 uppercase font-bold block">Station Desk</span>
+                    <span className="text-slate-300">{stationName}</span>
+                  </div>
                 </div>
-                <span className="text-[10px] text-slate-400 mt-1 block">
-                  Valid for exactly 1 ballot submission on any tablet.
-                </span>
-              </div>
 
-              {/* Instructions */}
-              <div className="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/80 text-[10px] text-slate-400 space-y-1">
-                <div className="font-bold text-slate-300">How to cast your vote:</div>
-                <div>1. Walk to any open voting tablet.</div>
-                <div>2. Enter Election Code: <strong className="text-amber-400 font-mono">{issuedSlip.election?.code}</strong></div>
-                <div>3. Enter Index Number: <strong className="text-white font-mono">{issuedSlip.student?.indexNumber}</strong></div>
-                <div>4. Enter OTP: <strong className="text-emerald-400 font-mono">{issuedSlip.otp}</strong></div>
+                {/* The OTP Big Card */}
+                <div className="bg-[#0a152d] border-2 border-emerald-500/60 rounded-xl p-3.5 text-center">
+                  <span className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold block">
+                    ONE-TIME PASSWORD (OTP)
+                  </span>
+                  <div className="text-2xl sm:text-3xl font-mono font-black text-white tracking-widest mt-1 flex items-center justify-center gap-2">
+                    <span>{issuedSlip.otp}</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 mt-1 block">
+                    Valid for exactly 1 ballot submission on any tablet.
+                  </span>
+                </div>
+
+                {/* Instructions */}
+                <div className="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/80 text-[10px] text-slate-400 space-y-1">
+                  <div className="font-bold text-slate-300">How to cast your vote:</div>
+                  <div>1. Walk to any open voting tablet.</div>
+                  <div>2. Enter Election Code: <strong className="text-amber-400 font-mono">{issuedSlip.election?.code}</strong></div>
+                  <div>3. Enter Index Number: <strong className="text-white font-mono">{issuedSlip.student?.indexNumber}</strong></div>
+                  <div>4. Enter OTP: <strong className="text-emerald-400 font-mono">{issuedSlip.otp}</strong></div>
+                </div>
               </div>
             </div>
 
-            {/* Modal Actions */}
-            <div className="mt-4 flex items-center justify-end gap-2">
+            {/* Pinned Modal Footer */}
+            <div className="shrink-0 p-3 sm:p-4 border-t border-slate-800 bg-slate-900/90 flex items-center justify-end gap-2">
               <button
+                type="button"
                 onClick={() => handleCopyOtp(issuedSlip.otp)}
                 className="btn-secondary text-xs py-2 px-3 flex items-center gap-1.5"
               >
@@ -815,6 +844,7 @@ export const PollingStationPortal = ({ onOpenTabletMode }) => {
               </button>
 
               <button
+                type="button"
                 onClick={handlePrintSlip}
                 className="btn-secondary text-xs py-2 px-3 flex items-center gap-1.5"
               >
@@ -823,6 +853,7 @@ export const PollingStationPortal = ({ onOpenTabletMode }) => {
               </button>
 
               <button
+                type="button"
                 onClick={() => {
                   setIssuedSlip(null);
                   setLookupIndex("");
@@ -838,9 +869,16 @@ export const PollingStationPortal = ({ onOpenTabletMode }) => {
 
       {/* OFFICER CHANGE PASSWORD MODAL */}
       {showChangePassModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-panel max-w-sm w-full p-6 border-slate-700 shadow-2xl space-y-4 animate-fadeIn relative">
-            <div className="flex items-center justify-between">
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto"
+          onClick={() => setShowChangePassModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-panel max-w-sm w-full my-auto max-h-[calc(100vh-2rem)] sm:max-h-[90vh] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden"
+          >
+            {/* Pinned Modal Header */}
+            <div className="shrink-0 p-4 border-b border-slate-800 bg-slate-900/90 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Key className="w-4 h-4 text-amber-400" />
                 <h3 className="font-extrabold text-white text-base">
@@ -848,66 +886,72 @@ export const PollingStationPortal = ({ onOpenTabletMode }) => {
                 </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setShowChangePassModal(false)}
-                className="text-slate-400 hover:text-white"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+                title="Close (Esc)"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-400">
-              Update your EC Officer password for today's voting session.
-            </p>
+            {/* Form with Scrollable Body and Pinned Footer */}
+            <form onSubmit={handleChangePasswordSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs custom-modal-scroll">
+                <p className="text-xs text-slate-400">
+                  Update your EC Officer password for today's voting session.
+                </p>
 
-            {changePassError && (
-              <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{changePassError}</span>
+                {changePassError && (
+                  <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{changePassError}</span>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block font-bold text-slate-300 uppercase mb-1">
+                    Current Password / Default PIN
+                  </label>
+                  <input
+                    type="password"
+                    value={currentPassInput}
+                    onChange={(e) => setCurrentPassInput(e.target.value)}
+                    className="form-input text-xs py-2 px-3 bg-slate-900 border-slate-700 text-white w-full"
+                    required
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-300 uppercase mb-1">
+                    New Private Password (min 4 chars)
+                  </label>
+                  <input
+                    type="password"
+                    value={newPassInput}
+                    onChange={(e) => setNewPassInput(e.target.value)}
+                    className="form-input text-xs py-2 px-3 bg-slate-900 border-slate-700 text-white w-full"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-300 uppercase mb-1">
+                    Confirm New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmPassInput}
+                    onChange={(e) => setConfirmPassInput(e.target.value)}
+                    className="form-input text-xs py-2 px-3 bg-slate-900 border-slate-700 text-white w-full"
+                    required
+                  />
+                </div>
               </div>
-            )}
 
-            <form onSubmit={handleChangePasswordSubmit} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-slate-300 uppercase mb-1">
-                  Current Password / Default PIN
-                </label>
-                <input
-                  type="password"
-                  value={currentPassInput}
-                  onChange={(e) => setCurrentPassInput(e.target.value)}
-                  className="form-input text-xs py-2 px-3 bg-slate-900 border-slate-700 text-white w-full"
-                  required
-                  autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-300 uppercase mb-1">
-                  New Private Password (min 4 chars)
-                </label>
-                <input
-                  type="password"
-                  value={newPassInput}
-                  onChange={(e) => setNewPassInput(e.target.value)}
-                  className="form-input text-xs py-2 px-3 bg-slate-900 border-slate-700 text-white w-full"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-300 uppercase mb-1">
-                  Confirm New Password
-                </label>
-                <input
-                  type="password"
-                  value={confirmPassInput}
-                  onChange={(e) => setConfirmPassInput(e.target.value)}
-                  className="form-input text-xs py-2 px-3 bg-slate-900 border-slate-700 text-white w-full"
-                  required
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
+              {/* Pinned Modal Footer */}
+              <div className="shrink-0 p-3 sm:p-4 border-t border-slate-800 bg-slate-900/90 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowChangePassModal(false)}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useVoting } from "../../context/VotingContext";
 import {
   Vote,
@@ -30,6 +30,17 @@ export const VoterLogin = ({ onOpenOfficerDesk }) => {
   const [setupNewPass, setSetupNewPass] = useState("");
   const [setupConfirmPass, setSetupConfirmPass] = useState("");
   const [setupError, setSetupError] = useState("");
+
+  // Close modal on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setShowPasswordSetupModal(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -229,97 +240,111 @@ export const VoterLogin = ({ onOpenOfficerDesk }) => {
 
       {/* First-Time Password Creation Modal */}
       {showPasswordSetupModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-panel max-w-md w-full p-6 border-slate-700 shadow-2xl relative animate-fadeIn">
-            <button
-              onClick={() => setShowPasswordSetupModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
-                <Lock className="w-5 h-5" />
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto"
+          onClick={() => setShowPasswordSetupModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-panel max-w-md w-full my-auto max-h-[calc(100vh-2rem)] sm:max-h-[90vh] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden"
+          >
+            {/* Pinned Modal Header */}
+            <div className="shrink-0 p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30 shrink-0">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-white font-display">Create Private Password</h3>
+                  <p className="text-[11px] sm:text-xs text-slate-400">Set your personal password to protect your account.</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-xl font-bold text-white font-display">Create Private Password</h3>
-                <p className="text-xs text-slate-400">Set your personal password to protect your voting account.</p>
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowPasswordSetupModal(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+                title="Close (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <form onSubmit={handlePasswordSetupSubmit} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-300 uppercase mb-1">
-                  School Election Code
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. ACH-2026 or PRM-2026"
-                  value={setupSchoolCode}
-                  onChange={(e) => setSetupSchoolCode(e.target.value)}
-                  className="form-input font-mono uppercase"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-300 uppercase mb-1">
-                  Student Index Number
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. 101001001"
-                  value={setupIndex}
-                  onChange={(e) => setSetupIndex(e.target.value)}
-                  className="form-input font-mono"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-300 uppercase mb-1">
-                  Your New Private Password
-                </label>
-                <input
-                  type="password"
-                  placeholder="Create private password"
-                  value={setupNewPass}
-                  onChange={(e) => setSetupNewPass(e.target.value)}
-                  className="form-input font-mono"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-300 uppercase mb-1">
-                  Confirm Private Password
-                </label>
-                <input
-                  type="password"
-                  placeholder="Re-enter private password"
-                  value={setupConfirmPass}
-                  onChange={(e) => setSetupConfirmPass(e.target.value)}
-                  className="form-input font-mono"
-                  required
-                />
-              </div>
-
-              {setupError && (
-                <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
-                  {setupError}
+            {/* Form with Scrollable Body and Pinned Footer */}
+            <form onSubmit={handlePasswordSetupSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 text-xs custom-modal-scroll">
+                <div>
+                  <label className="block font-semibold text-slate-300 uppercase mb-1">
+                    School Election Code
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. ACH-2026 or PRM-2026"
+                    value={setupSchoolCode}
+                    onChange={(e) => setSetupSchoolCode(e.target.value)}
+                    className="form-input font-mono uppercase"
+                    required
+                  />
                 </div>
-              )}
 
-              <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
+                <div>
+                  <label className="block font-semibold text-slate-300 uppercase mb-1">
+                    Student Index Number
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 101001001"
+                    value={setupIndex}
+                    onChange={(e) => setSetupIndex(e.target.value)}
+                    className="form-input font-mono"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-300 uppercase mb-1">
+                    Your New Private Password
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="Create private password"
+                    value={setupNewPass}
+                    onChange={(e) => setSetupNewPass(e.target.value)}
+                    className="form-input font-mono"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-300 uppercase mb-1">
+                    Confirm Private Password
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="Re-enter private password"
+                    value={setupConfirmPass}
+                    onChange={(e) => setSetupConfirmPass(e.target.value)}
+                    className="form-input font-mono"
+                    required
+                  />
+                </div>
+
+                {setupError && (
+                  <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
+                    {setupError}
+                  </div>
+                )}
+              </div>
+
+              {/* Pinned Modal Footer */}
+              <div className="shrink-0 p-4 sm:p-5 border-t border-slate-800 bg-slate-900/90 flex justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setShowPasswordSetupModal(false)}
-                  className="btn-secondary text-xs"
+                  className="btn-secondary text-xs sm:text-sm"
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary text-xs font-bold">
+                <button type="submit" className="btn-primary text-xs sm:text-sm font-bold">
                   Set My Private Password
                 </button>
               </div>

@@ -23,7 +23,18 @@ export const OfficerLogin = ({ onClose, onLoginSuccess }) => {
     showToast,
   } = useVoting();
 
-  const [selectedSchoolId, setSelectedSchoolId] = useState(activeSchool.id);
+  const [selectedSchoolId, setSelectedSchoolId] = useState(
+    activeSchool?.id || (schools && schools.length > 0 ? schools[0].id : "")
+  );
+
+  React.useEffect(() => {
+    if (activeSchool?.id) {
+      setSelectedSchoolId(activeSchool.id);
+    } else if (schools && schools.length > 0) {
+      setSelectedSchoolId(schools[0].id);
+    }
+  }, [activeSchool?.id, schools]);
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

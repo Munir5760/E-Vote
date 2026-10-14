@@ -5,13 +5,13 @@ import { ShieldCheck, Download, History, Clock } from "lucide-react";
 export const AuditLogTab = () => {
   const { auditLogs, activeSchool, schools } = useVoting();
 
-  const schoolLogs = auditLogs.filter((log) => log.schoolId === activeSchool.id);
+  const schoolLogs = (auditLogs || []).filter((log) => log.schoolId === (activeSchool?.id || ""));
 
   const handleExportLogs = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(schoolLogs, null, 2));
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `audit_log_${activeSchool.shortName}_${Date.now()}.json`);
+    downloadAnchor.setAttribute("download", `audit_log_${activeSchool?.shortName || "school"}_${Date.now()}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.removeChild();
@@ -26,7 +26,7 @@ export const AuditLogTab = () => {
             <span>Cryptographic Audit & Event Logs</span>
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            Immutable trace of all voter logins, register edits, and cast ballot receipts for {activeSchool.name}.
+            Immutable trace of all voter logins, register edits, and cast ballot receipts for {activeSchool?.name || "School"}.
           </p>
         </div>
 

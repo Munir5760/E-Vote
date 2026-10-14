@@ -16,6 +16,9 @@ const VotingContext = createContext();
 
 const LOCAL_STORAGE_KEY = "gh_shs_evote_app_state_v8";
 const SYNC_CHANNEL_NAME = "gh_shs_evote_channel_v8";
+const USER_STORAGE_KEY = "gh_shs_evote_user_session_v8";
+const ACTIVE_SCHOOL_KEY = "gh_shs_evote_active_school_v8";
+const ACTIVE_ELECTION_KEY = "gh_shs_evote_active_election_v8";
 
 export const VotingProvider = ({ children }) => {
   const loadStoredState = () => {
@@ -24,8 +27,23 @@ export const VotingProvider = ({ children }) => {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed) {
+          const schools = Array.isArray(parsed.schools) && parsed.schools.length > 0
+            ? parsed.schools
+            : INITIAL_SCHOOLS;
+          const schoolAdmins = Array.isArray(parsed.schoolAdmins) && parsed.schoolAdmins.length > 0
+            ? parsed.schoolAdmins
+            : INITIAL_SCHOOL_ADMINS;
           return {
             ...parsed,
+            schools,
+            schoolAdmins,
+            elections: Array.isArray(parsed.elections) && parsed.elections.length > 0 ? parsed.elections : INITIAL_ELECTIONS,
+            positions: Array.isArray(parsed.positions) && parsed.positions.length > 0 ? parsed.positions : INITIAL_POSITIONS,
+            candidates: Array.isArray(parsed.candidates) && parsed.candidates.length > 0 ? parsed.candidates : INITIAL_CANDIDATES,
+            voters: Array.isArray(parsed.voters) && parsed.voters.length > 0 ? parsed.voters : INITIAL_VOTERS,
+            auditLogs: Array.isArray(parsed.auditLogs) ? parsed.auditLogs : INITIAL_AUDIT_LOGS,
+            version: Number(parsed.version) || 1,
+            updatedAt: Number(parsed.updatedAt) || Date.now(),
             officers: (parsed.officers && parsed.officers.length > 0) ? parsed.officers : INITIAL_OFFICERS,
             superAdmin: parsed.superAdmin || INITIAL_SUPER_ADMIN,
             systemConfig: parsed.systemConfig || INITIAL_SYSTEM_CONFIG,
@@ -36,6 +54,8 @@ export const VotingProvider = ({ children }) => {
       console.error("Failed to load local storage state:", e);
     }
     return {
+      version: 1,
+      updatedAt: Date.now(),
       schools: INITIAL_SCHOOLS,
       elections: INITIAL_ELECTIONS,
       positions: INITIAL_POSITIONS,
@@ -50,10 +70,85 @@ export const VotingProvider = ({ children }) => {
   };
 
   const [state, setState] = useState(loadStoredState);
-  const [activeSchoolId, setActiveSchoolId] = useState(INITIAL_SCHOOLS[0].id);
-  const [activeElectionId, setActiveElectionId] = useState("");
-  const [currentUser, setCurrentUser] = useState(null);
+
+  // Persisted current logged in session (Super Admin, School EC Admin, Officer, Voter)
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem(USER_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.role) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to restore user session from localStorage:", e);
+    }
+    return null;
+  });
+
+  // Persisted active school ID
+  const [activeSchoolId, setActiveSchoolId] = useState(() => {
+    try {
+      const savedUserStr = localStorage.getItem(USER_STORAGE_KEY);
+      if (savedUserStr) {
+        const savedUser = JSON.parse(savedUserStr);
+        if (savedUser?.schoolId) return savedUser.schoolId;
+      }
+      const savedSchoolId = localStorage.getItem(ACTIVE_SCHOOL_KEY);
+      if (savedSchoolId) return savedSchoolId;
+    } catch {}
+    return INITIAL_SCHOOLS[0].id;
+  });
+
+  // Persisted active election ID
+  const [activeElectionId, setActiveElectionId] = useState(() => {
+    try {
+      const savedUserStr = localStorage.getItem(USER_STORAGE_KEY);
+      if (savedUserStr) {
+        const parsedUser = JSON.parse(savedUserStr);
+        if (parsedUser?.electionId) return parsedUser.electionId;
+      }
+      const savedElectionId = localStorage.getItem(ACTIVE_ELECTION_KEY);
+      if (savedElectionId) return savedElectionId;
+    } catch {}
+    return "";
+  });
+
   const [toastNotification, setToastNotification] = useState(null);
+
+  // Sync user session to localStorage
+  useEffect(() => {
+    try {
+      if (currentUser) {
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(currentUser));
+      } else {
+        localStorage.removeItem(USER_STORAGE_KEY);
+      }
+    } catch (e) {
+      console.error("Failed to save user session:", e);
+    }
+  }, [currentUser]);
+
+  // Sync activeSchoolId to localStorage
+  useEffect(() => {
+    try {
+      if (activeSchoolId) {
+        localStorage.setItem(ACTIVE_SCHOOL_KEY, activeSchoolId);
+      }
+    } catch {}
+  }, [activeSchoolId]);
+
+  // Sync activeElectionId to localStorage
+  useEffect(() => {
+    try {
+      if (activeElectionId) {
+        localStorage.setItem(ACTIVE_ELECTION_KEY, activeElectionId);
+      } else {
+        localStorage.removeItem(ACTIVE_ELECTION_KEY);
+      }
+    } catch {}
+  }, [activeElectionId]);
 
   // Global Light/Dark Theme state
   const [theme, setTheme] = useState(() => {
@@ -85,8 +180,15 @@ export const VotingProvider = ({ children }) => {
   const tabIdRef = useRef(Math.random().toString(36).slice(2) + Date.now().toString(36));
   // Track last synced state JSON to avoid redundant saves, broadcasts, and POSTs
   const lastSyncedJsonRef = useRef(JSON.stringify(state));
+  // Track local mutations to avoid race-condition reverts from stale GETs
+  const lastLocalActionTimestampRef = useRef(0);
+  const stateRef = useRef(state);
 
-  // Sync state changes across tabs, devices, and LAN server
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  // Sync state changes across tabs, devices, and cloud server
   useEffect(() => {
     const currentJson = JSON.stringify(state);
     if (currentJson === lastSyncedJsonRef.current) {
@@ -141,32 +243,113 @@ export const VotingProvider = ({ children }) => {
           setState(parsed);
         } catch (err) {}
       }
+      if (e.key === USER_STORAGE_KEY) {
+        try {
+          const parsedUser = e.newValue ? JSON.parse(e.newValue) : null;
+          setCurrentUser(parsedUser);
+        } catch {}
+      }
+      if (e.key === ACTIVE_SCHOOL_KEY && e.newValue) {
+        setActiveSchoolId(e.newValue);
+      }
+      if (e.key === ACTIVE_ELECTION_KEY) {
+        setActiveElectionId(e.newValue || "");
+      }
     };
     window.addEventListener("storage", handleStorageChange);
 
+    const BLOB_FALLBACK_URL = "https://65iyucgw47mmkjlx.public.blob.vercel-storage.com/election_live_store.json";
+
     const applyRemoteIfChanged = (data) => {
-      if (data && !data.empty && data.schools) {
-        const remoteJson = JSON.stringify(data);
-        if (remoteJson !== lastSyncedJsonRef.current) {
-          lastSyncedJsonRef.current = remoteJson;
-          setState(data);
-        }
+      if (!data || data.empty || !Array.isArray(data.schools) || data.schools.length === 0) {
+        return;
+      }
+
+      // If a local user action just happened within 4 seconds, ignore remote to allow in-flight write to settle
+      if (Date.now() - lastLocalActionTimestampRef.current < 4000) {
+        return;
+      }
+
+      const remoteVersion = Number(data.version) || 0;
+      const remoteUpdatedAt = Number(data.updatedAt) || 0;
+      const localVersion = Number(stateRef.current?.version) || 0;
+      const localUpdatedAt = Number(stateRef.current?.updatedAt) || 0;
+
+      // If local state has a newer version or newer timestamp, do NOT overwrite with stale remote!
+      // Instead, sync our newer local state up to the cloud so all other laptops get our latest data
+      if (localVersion > remoteVersion || (localVersion === remoteVersion && localUpdatedAt > remoteUpdatedAt && localVersion > 1)) {
+        fetch("/api/state", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(stateRef.current),
+        }).catch(() => {});
+        return;
+      }
+
+      // Otherwise, the remote state is newer or equal: adopt it!
+      const remoteJson = JSON.stringify(data);
+      if (remoteJson !== lastSyncedJsonRef.current) {
+        lastSyncedJsonRef.current = remoteJson;
+        setState(data);
+        try {
+          localStorage.setItem(LOCAL_STORAGE_KEY, remoteJson);
+        } catch (e) {}
       }
     };
 
-    // Initial check against server state
-    fetch("/api/state")
-      .then((res) => res.json())
-      .then(applyRemoteIfChanged)
-      .catch(() => {});
+    const fetchLatestRemoteState = async () => {
+      const cacheBuster = `${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+      try {
+        const res = await fetch(`/api/state?_nocache=${cacheBuster}`, {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+          },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && !data.empty && Array.isArray(data.schools) && data.schools.length > 0) {
+            applyRemoteIfChanged(data);
+            return;
+          } else {
+            // Re-seed remote with valid state if remote store has empty schools
+            if (Array.isArray(stateRef.current?.schools) && stateRef.current.schools.length > 0) {
+              fetch("/api/state", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(stateRef.current),
+              }).catch(() => {});
+            }
+          }
+        }
+      } catch (err) {}
 
-    // Periodic check for multi-laptop updates across LAN
-    const pollInterval = setInterval(() => {
-      fetch("/api/state")
-        .then((res) => res.json())
-        .then(applyRemoteIfChanged)
-        .catch(() => {});
-    }, 5000);
+      // Fallback: fetch directly from public Vercel Blob cloud store
+      try {
+        const fallbackRes = await fetch(`${BLOB_FALLBACK_URL}?_nocache=${cacheBuster}`, {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+          },
+        });
+        if (fallbackRes.ok) {
+          const data = await fallbackRes.json();
+          if (data && !data.empty && Array.isArray(data.schools) && data.schools.length > 0) {
+            applyRemoteIfChanged(data);
+          }
+        }
+      } catch (fallbackErr) {}
+    };
+
+    // Initial check against server state
+    fetchLatestRemoteState();
+
+    // Periodic check for multi-device sync (every 4 seconds)
+    const pollInterval = setInterval(fetchLatestRemoteState, 4000);
 
     return () => {
       if (channel) channel.close();
@@ -182,11 +365,30 @@ export const VotingProvider = ({ children }) => {
     }, 4000);
   };
 
-  const activeSchool = state.schools.find((s) => s.id === activeSchoolId) || state.schools[0];
+  const DEFAULT_FALLBACK_SCHOOL = INITIAL_SCHOOLS[0] || {
+    id: "sch_achimota",
+    name: "Achimota School",
+    shortName: "Achimota",
+    motto: "Ut Omnes Unum Sint (That All May Be One)",
+    location: "Accra, Greater Accra Region",
+    code: "ACH-2026",
+    status: "active",
+    primaryColor: "#10b981",
+  };
+
+  const safeSchools = Array.isArray(state?.schools) && state.schools.length > 0
+    ? state.schools
+    : INITIAL_SCHOOLS;
+
+  const activeSchool =
+    safeSchools.find((s) => s.id === activeSchoolId) ||
+    safeSchools[0] ||
+    DEFAULT_FALLBACK_SCHOOL;
   
-  const schoolElections = state.elections.filter((e) => e.schoolId === activeSchoolId);
+  const safeElections = Array.isArray(state?.elections) ? state.elections : INITIAL_ELECTIONS;
+  const schoolElections = safeElections.filter((e) => e.schoolId === activeSchool.id);
   const activeElection = activeElectionId
-    ? state.elections.find((e) => e.id === activeElectionId && e.schoolId === activeSchoolId) || null
+    ? safeElections.find((e) => e.id === activeElectionId && e.schoolId === activeSchool.id) || null
     : null;
 
   const addAuditLog = (schoolId, event, actor, details) => {
@@ -694,6 +896,55 @@ export const VotingProvider = ({ children }) => {
       return { success: true, role: "super_admin" };
     }
 
+    // If School Code is provided:
+    if (cleanSchoolTarget) {
+      const targetSchool = state.schools.find(
+        (s) => s.code.toLowerCase() === cleanSchoolTarget || s.id.toLowerCase() === cleanSchoolTarget
+      );
+
+      if (!targetSchool) {
+        return {
+          success: false,
+          message: `No high school found matching School Code "${schoolIdOrCode.toUpperCase()}". Please verify your School Code.`,
+        };
+      }
+
+      const schoolAdmin = state.schoolAdmins.find(
+        (sa) =>
+          sa.schoolId === targetSchool.id &&
+          sa.username.toLowerCase() === cleanUser &&
+          sa.password === cleanPass
+      );
+
+      if (!schoolAdmin) {
+        return {
+          success: false,
+          message: `Invalid username or password for ${targetSchool.name} (${targetSchool.code}).`,
+        };
+      }
+
+      if (targetSchool.status === "terminated") {
+        return { success: false, message: "This school election account has been TERMINATED by Super Admin." };
+      }
+      if (targetSchool.status === "suspended") {
+        return { success: false, message: "This school election account is currently SUSPENDED by Super Admin." };
+      }
+
+      setActiveSchoolId(targetSchool.id);
+      setActiveElectionId("");
+
+      setCurrentUser({
+        role: "school_admin",
+        schoolId: targetSchool.id,
+        username: schoolAdmin.username,
+        name: schoolAdmin.name,
+        school: targetSchool,
+      });
+      showToast(`Logged in as EC Administrator for ${targetSchool.name}`, "success");
+      return { success: true, role: "school_admin", school: targetSchool };
+    }
+
+    // If School Code is NOT provided:
     const matchingAdmins = state.schoolAdmins.filter(
       (sa) => sa.username.toLowerCase() === cleanUser && sa.password === cleanPass
     );
@@ -701,42 +952,18 @@ export const VotingProvider = ({ children }) => {
     if (matchingAdmins.length === 0) {
       return {
         success: false,
-        message: "Invalid admin credentials. Please check your username, password, or target school code.",
+        message: "Invalid admin credentials. Please provide your School Code (e.g. ACH-2026 or PRM-2026), username, and password.",
       };
     }
 
-    let chosenAdmin = null;
-
-    if (cleanSchoolTarget) {
-      chosenAdmin = matchingAdmins.find((sa) => {
-        const sch = state.schools.find((s) => s.id === sa.schoolId);
-        return (
-          sa.schoolId.toLowerCase() === cleanSchoolTarget ||
-          (sch && sch.code.toLowerCase() === cleanSchoolTarget) ||
-          (sch && sch.id.toLowerCase() === cleanSchoolTarget)
-        );
-      });
-
-      if (!chosenAdmin) {
-        return {
-          success: false,
-          message: `Admin username '${username}' matched, but no matching school found for Code/Target '${schoolIdOrCode}'. Please select your exact school.`,
-          requiresSchoolSelection: true,
-        };
-      }
-    } else {
-      if (matchingAdmins.length === 1) {
-        chosenAdmin = matchingAdmins[0];
-      } else {
-        // Multiple schools share the exact same username & password!
-        return {
-          success: false,
-          message: `Multiple schools share the username '${username}'. Please select your target school or enter your School Code to separate logins.`,
-          requiresSchoolSelection: true,
-        };
-      }
+    if (matchingAdmins.length > 1) {
+      return {
+        success: false,
+        message: `Multiple schools share the username '${username}'. Please enter your School Code (e.g. ACH-2026 or PRM-2026) to identify your school.`,
+      };
     }
 
+    const chosenAdmin = matchingAdmins[0];
     const school = state.schools.find((s) => s.id === chosenAdmin.schoolId);
 
     if (school?.status === "terminated") {
@@ -774,12 +1001,26 @@ export const VotingProvider = ({ children }) => {
       username: sa.username,
       name: sa.name,
       school,
+      switchedFromSuperAdmin: currentUser?.role === "super_admin" || Boolean(currentUser?.switchedFromSuperAdmin),
     });
     showToast(`Switched to EC Administrator console for ${school.name}`, "info");
   };
 
+  const switchToSuperAdmin = () => {
+    const superAdminAccount = state.superAdmin || INITIAL_SUPER_ADMIN;
+    setCurrentUser({
+      role: "super_admin",
+      name: superAdminAccount.name,
+    });
+    showToast("Returned to Platform Developer Console", "info");
+  };
+
   const logout = () => {
     setCurrentUser(null);
+    try {
+      localStorage.removeItem(USER_STORAGE_KEY);
+      localStorage.removeItem(ACTIVE_ELECTION_KEY);
+    } catch {}
     showToast("Logged out successfully.", "info");
   };
 
@@ -854,6 +1095,7 @@ export const VotingProvider = ({ children }) => {
 
   // --- CREATE NEW ELECTION SESSION BY SCHOOL ADMIN ---
   const addElectionBySchoolAdmin = (schoolId, electionData) => {
+    lastLocalActionTimestampRef.current = Date.now();
     const newId = `elec_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
     const nowISO = new Date().toISOString();
     const defaultEnd = new Date(Date.now() + 8 * 3600000).toISOString(); // Default +8 hours
@@ -878,11 +1120,26 @@ export const VotingProvider = ({ children }) => {
       order: 1,
     };
 
-    setState((prev) => ({
-      ...prev,
-      elections: [...prev.elections, newElection],
-      positions: [...prev.positions, samplePos],
-    }));
+    setState((prev) => {
+      const nextState = {
+        ...prev,
+        version: (prev.version || 1) + 1,
+        updatedAt: Date.now(),
+        elections: [...prev.elections, newElection],
+        positions: [...prev.positions, samplePos],
+      };
+      const json = JSON.stringify(nextState);
+      lastSyncedJsonRef.current = json;
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, json);
+      } catch (e) {}
+      fetch("/api/state", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: json,
+      }).catch(() => {});
+      return nextState;
+    });
 
     setActiveElectionId(newId);
 
@@ -935,13 +1192,101 @@ export const VotingProvider = ({ children }) => {
   };
 
   const toggleElectionSessionStatus = (electionId, newStatus) => {
-    setState((prev) => ({
-      ...prev,
-      elections: prev.elections.map((e) => (e.id === electionId ? { ...e, status: newStatus } : e)),
-    }));
+    lastLocalActionTimestampRef.current = Date.now();
+    const nextVersion = (stateRef.current?.version || 1) + 1;
+    const nextUpdatedAt = Date.now();
+
+    setState((prev) => {
+      const updatedElections = prev.elections.map((e) =>
+        e.id === electionId ? { ...e, status: newStatus } : e
+      );
+      const nextState = {
+        ...prev,
+        version: nextVersion,
+        updatedAt: nextUpdatedAt,
+        elections: updatedElections,
+      };
+
+      const json = JSON.stringify(nextState);
+      lastSyncedJsonRef.current = json;
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, json);
+      } catch (e) {}
+
+      // Immediately push to cloud state to prevent race-condition reverts
+      fetch("/api/state", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: json,
+      }).catch(() => {});
+
+      return nextState;
+    });
 
     const elec = state.elections.find((e) => e.id === electionId);
-    showToast(`Election '${elec?.title}' status set to ${newStatus.toUpperCase()}`, "success");
+    addAuditLog(
+      elec?.schoolId,
+      "ELECTION_STATUS_CHANGE",
+      currentUser?.name || "School EC Admin",
+      `Changed status of '${elec?.title}' to ${newStatus.toUpperCase()}`
+    );
+
+    showToast(`Election '${elec?.title || "Session"}' status set to ${newStatus.toUpperCase()}`, "success");
+  };
+
+  const deleteElection = (electionId) => {
+    if (!electionId) return { success: false, message: "No election selected." };
+    const targetElec = state.elections.find((e) => e.id === electionId);
+    if (!targetElec) return { success: false, message: "Election not found." };
+
+    lastLocalActionTimestampRef.current = Date.now();
+    const nextVersion = (stateRef.current?.version || 1) + 1;
+    const nextUpdatedAt = Date.now();
+
+    const remainingSchoolElections = state.elections.filter(
+      (e) => e.schoolId === targetElec.schoolId && e.id !== electionId
+    );
+    const nextActiveId = remainingSchoolElections.length > 0 ? remainingSchoolElections[0].id : "";
+
+    setState((prev) => {
+      const nextState = {
+        ...prev,
+        version: nextVersion,
+        updatedAt: nextUpdatedAt,
+        elections: prev.elections.filter((e) => e.id !== electionId),
+        positions: prev.positions.filter((p) => p.electionId !== electionId),
+        candidates: prev.candidates.filter((c) => c.electionId !== electionId),
+        voters: prev.voters.filter((v) => v.electionId !== electionId),
+      };
+
+      const json = JSON.stringify(nextState);
+      lastSyncedJsonRef.current = json;
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, json);
+      } catch (e) {}
+
+      fetch("/api/state", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: json,
+      }).catch(() => {});
+
+      return nextState;
+    });
+
+    if (activeElectionId === electionId) {
+      setActiveElectionId(nextActiveId);
+    }
+
+    addAuditLog(
+      targetElec.schoolId,
+      "ELECTION_DELETED",
+      currentUser?.name || "School EC Admin",
+      `Permanently deleted election session '${targetElec.title}' (Code: ${targetElec.code}) along with its candidates, positions, and registered voter rosters.`
+    );
+
+    showToast(`Election '${targetElec.title}' deleted successfully.`, "info");
+    return { success: true };
   };
 
   // --- VOTING ACTION WITH ELECTION & CLASS TALLY ---
@@ -1447,7 +1792,13 @@ export const VotingProvider = ({ children }) => {
   };
 
   const resetAllData = () => {
-    localStorage.removeItem(LOCAL_STORAGE_KEY);
+    try {
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+      localStorage.removeItem(USER_STORAGE_KEY);
+      localStorage.removeItem(ACTIVE_SCHOOL_KEY);
+      localStorage.removeItem(ACTIVE_ELECTION_KEY);
+      localStorage.removeItem("gh_shs_admin_tab");
+    } catch {}
     setState({
       schools: INITIAL_SCHOOLS,
       elections: INITIAL_ELECTIONS,
@@ -1457,6 +1808,8 @@ export const VotingProvider = ({ children }) => {
       auditLogs: INITIAL_AUDIT_LOGS,
       schoolAdmins: INITIAL_SCHOOL_ADMINS,
       officers: INITIAL_OFFICERS,
+      superAdmin: INITIAL_SUPER_ADMIN,
+      systemConfig: INITIAL_SYSTEM_CONFIG,
     });
     setActiveSchoolId(INITIAL_SCHOOLS[0].id);
     setActiveElectionId("");
@@ -1496,6 +1849,7 @@ export const VotingProvider = ({ children }) => {
         adminResetStudentPassword,
         loginAsAdmin,
         switchToSchoolAdmin,
+        switchToSuperAdmin,
         logout,
         castVote,
         addCandidate,
@@ -1508,6 +1862,7 @@ export const VotingProvider = ({ children }) => {
         resetVoterStatus,
         toggleElectionStatus,
         addElectionBySchoolAdmin,
+        deleteElection,
         toggleElectionSessionStatus,
         updateElectionTimes,
         updateSchoolBranding,

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useVoting } from "../../context/VotingContext";
-import { LayoutDashboard, FileSpreadsheet, Users, BarChart3, History, Building2, Plus, Vote, Sparkles, CheckCircle2, Tv, KeyRound, UserCheck } from "lucide-react";
+import { LayoutDashboard, FileSpreadsheet, Users, BarChart3, History, Building2, Plus, Vote, Sparkles, CheckCircle2, Tv, KeyRound, UserCheck, X } from "lucide-react";
 import { OverviewTab } from "./OverviewTab";
 import { VoterRegisterTab } from "./VoterRegisterTab";
 import { CandidatesTab } from "./CandidatesTab";
@@ -21,9 +21,22 @@ export const AdminDashboard = () => {
     activeElectionId,
     setActiveElectionId,
     addElectionBySchoolAdmin,
+    switchToSuperAdmin,
   } = useVoting();
 
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      return localStorage.getItem("gh_shs_admin_tab") || "overview";
+    } catch {
+      return "overview";
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("gh_shs_admin_tab", activeTab);
+    } catch {}
+  }, [activeTab]);
 
   // New Election Modal state for School Admin
   const [showNewElectionModal, setShowNewElectionModal] = useState(false);
@@ -38,18 +51,31 @@ export const AdminDashboard = () => {
     return <SuperAdminConsole />;
   }
 
-  const schoolElections = elections.filter((e) => e.schoolId === activeSchool.id);
+  const schoolElections = (elections || []).filter((e) => e.schoolId === (activeSchool?.id || ""));
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setShowNewElectionModal(false);
+        setShowCollationDisplay(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const handleCreateElectionSubmit = (e) => {
     e.preventDefault();
     if (!elecTitle || !elecCode) return;
 
-    addElectionBySchoolAdmin(activeSchool.id, {
-      title: elecTitle,
-      code: elecCode,
-      type: elecType,
-      description: elecDesc || `${elecType} for ${activeSchool.name}`,
-    });
+    if (activeSchool?.id) {
+      addElectionBySchoolAdmin(activeSchool.id, {
+        title: elecTitle,
+        code: elecCode,
+        type: elecType,
+        description: elecDesc || `${elecType} for ${activeSchool?.name || "School"}`,
+      });
+    }
 
     setShowNewElectionModal(false);
     setElecTitle("");
@@ -76,15 +102,26 @@ export const AdminDashboard = () => {
             <div className="flex items-center gap-2">
               <span className="badge badge-live">EC ADMIN CONSOLE</span>
               <h2 className="text-2xl font-extrabold text-white tracking-tight">
-                {activeSchool.name} Electoral Control Center
+                {activeSchool?.name || "School"} Electoral Control Center
               </h2>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Managing named election sessions for <span className="text-amber-400 font-semibold">{activeSchool.name}</span>.
+              Managing named election sessions for <span className="text-amber-400 font-semibold">{activeSchool?.name || "School"}</span>.
             </p>
           </div>
 
           <div className="flex items-center gap-2">
+            {currentUser?.switchedFromSuperAdmin && (
+              <button
+                onClick={switchToSuperAdmin}
+                className="px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 bg-purple-500/20 text-purple-300 border border-purple-500/40 hover:bg-purple-500/30 transition-all shadow-md"
+                title="Return to Super Admin Developer Console"
+              >
+                <Building2 className="w-4 h-4 text-purple-400" />
+                <span>Return to Dev Console</span>
+              </button>
+            )}
+
             <button
               onClick={() => setShowCollationDisplay(true)}
               className="px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 text-white shadow-lg shadow-emerald-950 hover:brightness-110 transition-all border border-emerald-400/30"
@@ -189,74 +226,94 @@ export const AdminDashboard = () => {
 
       {/* Create New Election Session Modal */}
       {showNewElectionModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-panel max-w-lg w-full p-6 border-slate-700 shadow-2xl relative animate-fadeIn">
-            <h3 className="text-xl font-bold text-white mb-1">Create Election Session</h3>
-            <p className="text-xs text-slate-400 mb-4">
-              Add a general, class rep, or house election for {activeSchool.name}.
-            </p>
-
-            <form onSubmit={handleCreateElectionSubmit} className="space-y-4 text-xs">
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto"
+          onClick={() => setShowNewElectionModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-panel max-w-lg w-full my-auto max-h-[calc(100vh-2rem)] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden"
+          >
+            {/* Pinned Header */}
+            <div className="shrink-0 p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 flex items-start justify-between gap-3">
               <div>
-                <label className="block font-semibold text-slate-300 uppercase mb-1">
-                  Election Session Name / Label
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. SHS 2 Science 1 Class Prefect Election"
-                  value={elecTitle}
-                  onChange={(e) => setElecTitle(e.target.value)}
-                  className="form-input"
-                  required
-                />
+                <h3 className="text-base sm:text-lg font-bold text-white font-display">Create Election Session</h3>
+                <p className="text-xs text-slate-400">Add a general, class rep, or house election for {activeSchool?.name || "School"}.</p>
               </div>
+              <button
+                type="button"
+                onClick={() => setShowNewElectionModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+                title="Close (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handleCreateElectionSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-xs custom-modal-scroll">
                 <div>
                   <label className="block font-semibold text-slate-300 uppercase mb-1">
-                    Student Login Code
+                    Election Session Name / Label
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. ACH-SCI2-2026"
-                    value={elecCode}
-                    onChange={(e) => setElecCode(e.target.value)}
-                    className="form-input font-mono uppercase font-bold text-amber-400"
+                    placeholder="e.g. SHS 2 Science 1 Class Prefect Election"
+                    value={elecTitle}
+                    onChange={(e) => setElecTitle(e.target.value)}
+                    className="form-input"
                     required
                   />
                 </div>
 
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-slate-300 uppercase mb-1">
+                      Student Login Code
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. ACH-SCI2-2026"
+                      value={elecCode}
+                      onChange={(e) => setElecCode(e.target.value)}
+                      className="form-input font-mono uppercase font-bold text-amber-400"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-300 uppercase mb-1">
+                      Election Category / Type
+                    </label>
+                    <select
+                      value={elecType}
+                      onChange={(e) => setElecType(e.target.value)}
+                      className="form-input"
+                    >
+                      <option value="General Prefectural">General School Prefectural</option>
+                      <option value="Class / Form Election">Class / Form Prefect Election</option>
+                      <option value="Dormitory House Election">Dormitory House Election</option>
+                      <option value="SRC Executive Election">SRC Executive Election</option>
+                    </select>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block font-semibold text-slate-300 uppercase mb-1">
-                    Election Category / Type
+                    Description / Purpose
                   </label>
-                  <select
-                    value={elecType}
-                    onChange={(e) => setElecType(e.target.value)}
+                  <textarea
+                    rows="2"
+                    placeholder="e.g. Form captain and class assistant representative election for SHS 2 Science 1"
+                    value={elecDesc}
+                    onChange={(e) => setElecDesc(e.target.value)}
                     className="form-input"
-                  >
-                    <option value="General Prefectural">General School Prefectural</option>
-                    <option value="Class / Form Election">Class / Form Prefect Election</option>
-                    <option value="Dormitory House Election">Dormitory House Election</option>
-                    <option value="SRC Executive Election">SRC Executive Election</option>
-                  </select>
+                  ></textarea>
                 </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-300 uppercase mb-1">
-                  Description / Purpose
-                </label>
-                <textarea
-                  rows="2"
-                  placeholder="e.g. Form captain and class assistant representative election for SHS 2 Science 1"
-                  value={elecDesc}
-                  onChange={(e) => setElecDesc(e.target.value)}
-                  className="form-input"
-                ></textarea>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              {/* Pinned Footer */}
+              <div className="shrink-0 px-4 sm:px-5 py-3 border-t border-slate-800 bg-slate-900/90 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowNewElectionModal(false)}

@@ -17,7 +17,10 @@ import {
   AlertCircle,
   Sparkles,
   Save,
-  Tv
+  Tv,
+  Trash2,
+  X,
+  AlertTriangle,
 } from "lucide-react";
 import { LiveCollationDisplay } from "./LiveCollationDisplay";
 
@@ -29,11 +32,13 @@ export const OverviewTab = () => {
     candidates,
     voters,
     toggleElectionSessionStatus,
+    deleteElection,
     updateElectionTimes,
     updateSchoolBranding,
   } = useVoting();
 
   const [showCollationDisplay, setShowCollationDisplay] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Schedule local state
   const [startTime, setStartTime] = useState(activeElection?.startTime || "");
@@ -77,7 +82,7 @@ export const OverviewTab = () => {
 
   const handleSaveBranding = (e) => {
     e.preventDefault();
-    if (!activeSchool) return;
+    if (!activeSchool?.id) return;
     updateSchoolBranding(activeSchool.id, {
       logo: schoolLogo,
       motto: schoolMotto,
@@ -85,16 +90,16 @@ export const OverviewTab = () => {
     });
   };
 
-  const electionPositions = positions.filter(
-    (p) => p.electionId === activeElection?.id || (p.schoolId === activeSchool.id && !p.electionId)
+  const electionPositions = (positions || []).filter(
+    (p) => p.electionId === activeElection?.id || (p.schoolId === (activeSchool?.id || "") && !p.electionId)
   );
 
-  const electionCandidates = candidates.filter(
-    (c) => c.electionId === activeElection?.id || (c.schoolId === activeSchool.id && !c.electionId)
+  const electionCandidates = (candidates || []).filter(
+    (c) => c.electionId === activeElection?.id || (c.schoolId === (activeSchool?.id || "") && !c.electionId)
   );
 
-  const electionVoters = voters.filter(
-    (v) => v.electionId === activeElection?.id || (!v.electionId && v.schoolId === activeSchool.id)
+  const electionVoters = (voters || []).filter(
+    (v) => v.electionId === activeElection?.id || (!v.electionId && v.schoolId === (activeSchool?.id || ""))
   );
 
   const totalVoters = electionVoters.length;
@@ -119,6 +124,18 @@ export const OverviewTab = () => {
     { name: "Shield C", url: "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=150&auto=format&fit=crop&q=80" },
   ];
 
+  if (!activeElection) {
+    return (
+      <div className="glass-panel p-10 text-center space-y-4 border-slate-800">
+        <Vote className="w-12 h-12 text-slate-500 mx-auto" />
+        <h3 className="text-xl font-bold text-white">No Election Session Selected</h3>
+        <p className="text-xs text-slate-400 max-w-md mx-auto">
+          Please select an election session from the dropdown above, or click "Create New Election Session" to start a new poll for <strong className="text-amber-400">{activeSchool?.name || "School"}</strong>.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Top Banner & Control Status Bar */}
@@ -126,12 +143,12 @@ export const OverviewTab = () => {
         <div className="flex items-center gap-4">
           <div
             className="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-700 flex items-center justify-center text-amber-400 font-bold overflow-hidden shadow-lg shrink-0"
-            style={{ borderColor: activeSchool.primaryColor || undefined }}
+            style={{ borderColor: activeSchool?.primaryColor || undefined }}
           >
-            {activeSchool.logo ? (
+            {activeSchool?.logo ? (
               <img
                 src={activeSchool.logo}
-                alt={activeSchool.name}
+                alt={activeSchool?.name || "School"}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -146,16 +163,16 @@ export const OverviewTab = () => {
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              {activeSchool.name} • Category: <span className="text-emerald-400 font-semibold">{activeElection?.type}</span>
+              {activeSchool?.name || "School"} • Category: <span className="text-emerald-400 font-semibold">{activeElection?.type}</span>
             </p>
-            {activeSchool.motto && (
+            {activeSchool?.motto && (
               <p className="text-[11px] text-slate-500 italic mt-0.5">"{activeSchool.motto}"</p>
             )}
           </div>
         </div>
 
-        {/* Election Control Controls */}
-        <div className="flex flex-col items-end gap-2">
+        {/* Election Controls & Delete Option */}
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <div className="flex items-center gap-2 bg-slate-950 p-2 rounded-xl border border-slate-800">
             <span className="text-xs font-semibold text-slate-400 px-2">Status:</span>
 
@@ -203,6 +220,15 @@ export const OverviewTab = () => {
               <Lock className="w-3.5 h-3.5" /> Seal Election
             </button>
           </div>
+
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            title="Delete this election session permanently"
+            className="px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 hover:border-red-500/50 transition-all cursor-pointer shadow-sm"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Delete Election</span>
+          </button>
         </div>
       </div>
 
@@ -576,6 +602,94 @@ export const OverviewTab = () => {
 
       {showCollationDisplay && (
         <LiveCollationDisplay onClose={() => setShowCollationDisplay(false)} />
+      )}
+
+      {/* Delete Election Confirmation Modal */}
+      {showDeleteModal && (
+        <div
+          className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn"
+          onClick={() => setShowDeleteModal(false)}
+        >
+          <div
+            className="glass-panel w-full max-w-lg border-red-500/40 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden rounded-2xl animate-scaleUp"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-5 border-b border-slate-800 flex items-center justify-between shrink-0 bg-red-950/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center border border-red-500/30">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Delete Election Session</h3>
+                  <p className="text-xs text-red-300 font-mono">Irreversible Action</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="w-8 h-8 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto custom-modal-scroll space-y-4 text-xs text-slate-300">
+              <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-xl flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <span className="font-bold text-red-300 text-sm block">Warning: Permanent Data Removal</span>
+                  <p className="text-slate-300">
+                    Are you sure you want to delete this election session? This will permanently erase:
+                  </p>
+                  <ul className="list-disc list-inside mt-2 space-y-1 text-slate-300">
+                    <li>Election session record: <strong className="text-white">{activeElection?.title}</strong></li>
+                    <li>All ballot positions (<strong className="text-white">{electionPositions.length}</strong> contested positions)</li>
+                    <li>All candidate nominations (<strong className="text-white">{electionCandidates.length}</strong> candidates)</li>
+                    <li>The registered voter roster (<strong className="text-white">{totalVoters}</strong> student voters) and all cast ballots</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Election Title:</span>
+                  <span className="font-bold text-white">{activeElection?.title}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Student Election Code:</span>
+                  <span className="font-mono font-bold text-amber-400">{activeElection?.code}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">School:</span>
+                  <span className="font-semibold text-slate-200">{activeSchool?.name}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-800 flex justify-end gap-3 shrink-0 bg-slate-950">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="btn-secondary text-xs px-4 py-2 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  deleteElection(activeElection.id);
+                  setShowDeleteModal(false);
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-950 transition-all cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Yes, Delete This Election</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

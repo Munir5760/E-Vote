@@ -12,7 +12,8 @@ import {
   BookOpen,
   UserCheck,
   Clock,
-  Timer
+  Timer,
+  X
 } from "lucide-react";
 import { VoteConfirmationModal } from "./VoteConfirmationModal";
 import { VoteReceipt } from "./VoteReceipt";
@@ -86,6 +87,17 @@ export const VotingBooth = () => {
       handleFinalSubmit();
     }
   }, [sessionSecondsLeft]);
+
+  // Close manifesto modal on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setShowManifestoModal(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const formatTimer = (totalSeconds) => {
     if (totalSeconds <= 0) return "00:00:00 (Voting Closed)";
@@ -358,39 +370,61 @@ export const VotingBooth = () => {
           </span>
           <ChevronRight className="w-4 h-4" />
         </button>
-      </div>
-
-      {/* Candidate Manifesto Modal */}
+      </div>      {/* Candidate Manifesto Modal */}
       {showManifestoModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-panel max-w-lg w-full p-6 border-slate-700 shadow-2xl relative animate-fadeIn">
-            <div className="flex items-start gap-4 mb-4">
-              <img
-                src={showManifestoModal.photo}
-                alt={showManifestoModal.name}
-                className="w-16 h-16 rounded-xl object-cover border-2 border-slate-700"
-              />
-              <div>
-                <span className="badge badge-live mb-1">{showManifestoModal.house}</span>
-                <h3 className="text-xl font-bold text-white">{showManifestoModal.name}</h3>
-                <p className="text-xs text-amber-400 font-semibold">"{showManifestoModal.alias}"</p>
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto"
+          onClick={() => setShowManifestoModal(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-panel max-w-lg w-full my-auto max-h-[calc(100vh-2rem)] sm:max-h-[90vh] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden"
+          >
+            {/* Pinned Modal Header */}
+            <div className="shrink-0 p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <img
+                  src={showManifestoModal.photo}
+                  alt={showManifestoModal.name}
+                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover border-2 border-slate-700 shrink-0"
+                />
+                <div>
+                  <span className="badge badge-live text-[10px] mb-1">{showManifestoModal.house}</span>
+                  <h3 className="text-base sm:text-lg font-bold text-white">{showManifestoModal.name}</h3>
+                  <p className="text-xs text-amber-400 font-semibold">"{showManifestoModal.alias}"</p>
+                </div>
               </div>
-            </div>
-
-            <div className="bg-slate-900/90 p-4 rounded-xl border border-slate-800 mb-6 text-sm text-slate-300 leading-relaxed max-h-60 overflow-y-auto">
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                Official Manifesto & Vision Statement
-              </div>
-              <p className="whitespace-pre-line">{showManifestoModal.manifesto}</p>
-              <div className="mt-4 pt-3 border-t border-slate-800 text-xs font-bold text-amber-400">
-                Campaign Motto: <span className="text-white font-normal">"{showManifestoModal.motto}"</span>
-              </div>
-            </div>
-
-            <div className="flex justify-end">
               <button
+                type="button"
                 onClick={() => setShowManifestoModal(null)}
-                className="btn-secondary text-xs"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+                title="Close (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Modal Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-sm text-slate-300 leading-relaxed custom-modal-scroll">
+              <div className="bg-slate-900/90 p-4 rounded-xl border border-slate-800">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                  Official Manifesto &amp; Vision Statement
+                </div>
+                <p className="whitespace-pre-line text-xs sm:text-sm text-slate-200">{showManifestoModal.manifesto}</p>
+                {showManifestoModal.motto && (
+                  <div className="mt-4 pt-3 border-t border-slate-800 text-xs font-bold text-amber-400">
+                    Campaign Motto: <span className="text-white font-normal">"{showManifestoModal.motto}"</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Pinned Modal Footer */}
+            <div className="shrink-0 p-3 sm:p-4 border-t border-slate-800 bg-slate-900/90 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowManifestoModal(null)}
+                className="btn-secondary text-xs sm:text-sm px-4 py-2"
               >
                 Close Manifesto
               </button>

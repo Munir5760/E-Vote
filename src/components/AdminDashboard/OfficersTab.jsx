@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useVoting } from "../../context/VotingContext";
 import {
   Users,
@@ -33,7 +33,7 @@ export const OfficersTab = () => {
     showToast,
   } = useVoting();
 
-  const schoolOfficers = (officers || []).filter((o) => o.schoolId === activeSchool.id);
+  const schoolOfficers = (officers || []).filter((o) => o.schoolId === (activeSchool?.id || ""));
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL"); // ALL | active | suspended
@@ -47,7 +47,7 @@ export const OfficersTab = () => {
   // New Officer Form
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
-  const [desk, setDesk] = useState(`Station Desk ${schoolOfficers.length + 1}`);
+  const [desk, setDesk] = useState(`Station Desk ${(schoolOfficers || []).length + 1}`);
   const [defaultPassword, setDefaultPassword] = useState("123");
   const [phone, setPhone] = useState("");
   const [formError, setFormError] = useState("");
@@ -70,6 +70,18 @@ export const OfficersTab = () => {
   const suspendedCount = schoolOfficers.filter((o) => o.status === "suspended").length;
   const changedPassCount = schoolOfficers.filter((o) => o.isPasswordChanged).length;
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setShowRecruitModal(false);
+        setShowResetModal(false);
+        setIssuedSlipOfficer(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const handleRecruitSubmit = (e) => {
     e.preventDefault();
     setFormError("");
@@ -85,7 +97,7 @@ export const OfficersTab = () => {
       desk: desk.trim() || `Station Desk ${schoolOfficers.length + 1}`,
       defaultPassword: defaultPassword.trim(),
       phone: phone.trim(),
-      schoolId: activeSchool.id,
+      schoolId: activeSchool?.id || "",
     });
 
     if (!res.success) {
@@ -112,7 +124,7 @@ export const OfficersTab = () => {
   };
 
   const handleCopyCredentials = (off) => {
-    const credText = `--- GHANA SHS E-VOTE EC CREDENTIALS ---\nSchool: ${activeSchool.name}\nOfficer: ${off.name}\nStation: ${off.desk}\nUsername: ${off.username}\nDefault Password: ${off.password}\nNote: Change this password on Election Day.`;
+    const credText = `--- GHANA SHS E-VOTE EC CREDENTIALS ---\nSchool: ${activeSchool?.name || "School"}\nOfficer: ${off.name}\nStation: ${off.desk}\nUsername: ${off.username}\nDefault Password: ${off.password}\nNote: Change this password on Election Day.`;
     if (navigator?.clipboard) {
       navigator.clipboard.writeText(credText);
       showToast(`Copied credentials for ${off.name} to clipboard!`, "success");
@@ -133,7 +145,7 @@ export const OfficersTab = () => {
             </div>
             <p className="text-xs text-slate-400 mt-1">
               Recruit, credential, and manage polling station officers for{" "}
-              <strong className="text-amber-400">{activeSchool.name}</strong>. Officers can only
+              <strong className="text-amber-400">{activeSchool?.name || "School"}</strong>. Officers can only
               access the student OTP generation portal with authorized credentials.
             </p>
           </div>
@@ -399,115 +411,127 @@ export const OfficersTab = () => {
 
       {/* RECRUIT OFFICER MODAL */}
       {showRecruitModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-panel max-w-md w-full p-6 border-slate-700 shadow-2xl space-y-4 animate-fadeIn relative">
-            <div className="flex items-center justify-between">
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto"
+          onClick={() => setShowRecruitModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-panel max-w-md w-full my-auto max-h-[calc(100vh-2rem)] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden"
+          >
+            {/* Pinned Header */}
+            <div className="shrink-0 p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 flex items-start justify-between gap-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold shrink-0">
                   <UserPlus className="w-4 h-4" />
                 </div>
-                <h3 className="font-extrabold text-white text-base">
-                  Recruit EC Polling Officer
-                </h3>
+                <div>
+                  <h3 className="font-extrabold text-white text-base">
+                    Recruit EC Polling Officer
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Create official polling station credentials for student accreditation.
+                  </p>
+                </div>
               </div>
               <button
+                type="button"
                 onClick={() => setShowRecruitModal(false)}
-                className="text-slate-400 hover:text-white"
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-400">
-              Create official polling station credentials for student accreditation and OTP issuance.
-            </p>
+            <form onSubmit={handleRecruitSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 text-xs custom-modal-scroll">
+                {formError && (
+                  <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{formError}</span>
+                  </div>
+                )}
 
-            {formError && (
-              <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{formError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleRecruitSubmit} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-slate-300 uppercase mb-1">
-                  Full Name of Recruited Officer
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Ama Boateng"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="form-input text-xs py-2 px-3 bg-slate-900 border-slate-700 text-white w-full"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-300 uppercase mb-1">
-                  Officer Username / Staff ID
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. officer_desk3"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="form-input text-xs py-2 px-3 bg-slate-900 border-slate-700 text-white w-full"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-300 uppercase mb-1">
-                  Assigned Polling Desk Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Station Desk 3 - Assembly Hall"
-                  value={desk}
-                  onChange={(e) => setDesk(e.target.value)}
-                  className="form-input text-xs py-2 px-3 bg-slate-900 border-slate-700 text-white w-full"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block font-bold text-slate-300 uppercase mb-1">
-                    Default Password
+                    Full Name of Recruited Officer
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. 123"
-                    value={defaultPassword}
-                    onChange={(e) => setDefaultPassword(e.target.value)}
-                    className="form-input text-xs py-2 px-3 bg-slate-900 border-slate-700 text-amber-400 font-mono font-bold w-full"
+                    placeholder="e.g. Ama Boateng"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="form-input text-xs py-2 px-3 bg-slate-900 border-slate-700 text-white w-full"
                     required
                   />
                 </div>
+
                 <div>
                   <label className="block font-bold text-slate-300 uppercase mb-1">
-                    Phone Number (Optional)
+                    Officer Username / Staff ID
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. 0244123456"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="e.g. officer_desk3"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     className="form-input text-xs py-2 px-3 bg-slate-900 border-slate-700 text-white w-full"
+                    required
                   />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-300 uppercase mb-1">
+                    Assigned Polling Desk Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Station Desk 3 - Assembly Hall"
+                    value={desk}
+                    onChange={(e) => setDesk(e.target.value)}
+                    className="form-input text-xs py-2 px-3 bg-slate-900 border-slate-700 text-white w-full"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block font-bold text-slate-300 uppercase mb-1">
+                      Default Password
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 123"
+                      value={defaultPassword}
+                      onChange={(e) => setDefaultPassword(e.target.value)}
+                      className="form-input text-xs py-2 px-3 bg-slate-900 border-slate-700 text-amber-400 font-mono font-bold w-full"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-300 uppercase mb-1">
+                      Phone Number (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 0244123456"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="form-input text-xs py-2 px-3 bg-slate-900 border-slate-700 text-white w-full"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-[11px] text-slate-400 flex items-start gap-2">
+                  <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                  <span>
+                    The officer will use this default password to log into the OTP station and can change it on Election Day.
+                  </span>
                 </div>
               </div>
 
-              <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-[11px] text-slate-400 flex items-start gap-2">
-                <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                <span>
-                  The officer will use this default password to log into the OTP station and can change it on Election Day.
-                </span>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
+              {/* Pinned Footer */}
+              <div className="shrink-0 px-4 sm:px-5 py-3 border-t border-slate-800 bg-slate-900/90 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowRecruitModal(false)}
@@ -519,7 +543,7 @@ export const OfficersTab = () => {
                   type="submit"
                   className="btn-gold text-xs px-4 py-2 font-bold shadow-md"
                 >
-                  Issue Credentials & Recruit
+                  Issue Credentials &amp; Recruit
                 </button>
               </div>
             </form>
@@ -529,45 +553,54 @@ export const OfficersTab = () => {
 
       {/* RESET PASSWORD MODAL */}
       {showResetModal && selectedOfficerForReset && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-panel max-w-sm w-full p-6 border-slate-700 shadow-2xl space-y-4 animate-fadeIn relative">
-            <div className="flex items-center justify-between">
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto"
+          onClick={() => setShowResetModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-panel max-w-sm w-full my-auto max-h-[calc(100vh-2rem)] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden"
+          >
+            <div className="shrink-0 p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 flex items-start justify-between gap-3">
               <div className="flex items-center gap-2">
-                <RotateCcw className="w-4 h-4 text-amber-400" />
+                <RotateCcw className="w-4 h-4 text-amber-400 shrink-0" />
                 <h3 className="font-extrabold text-white text-base">
                   Reset Officer Password
                 </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setShowResetModal(false)}
-                className="text-slate-400 hover:text-white"
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-400">
-              Set a new default password for{" "}
-              <strong className="text-white">{selectedOfficerForReset.name}</strong> (
-              {selectedOfficerForReset.desk}).
-            </p>
+            <form onSubmit={handleResetPasswordSubmit} className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 text-xs custom-modal-scroll">
+                <p className="text-slate-400">
+                  Set a new default password for{" "}
+                  <strong className="text-white">{selectedOfficerForReset.name}</strong> (
+                  {selectedOfficerForReset.desk}).
+                </p>
 
-            <form onSubmit={handleResetPasswordSubmit} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-slate-300 uppercase mb-1">
-                  New Default Password
-                </label>
-                <input
-                  type="text"
-                  value={newDefaultPass}
-                  onChange={(e) => setNewDefaultPass(e.target.value)}
-                  className="form-input text-xs py-2 px-3 bg-slate-900 border-slate-700 text-amber-400 font-mono font-bold w-full"
-                  required
-                  autoFocus
-                />
+                <div>
+                  <label className="block font-bold text-slate-300 uppercase mb-1">
+                    New Default Password
+                  </label>
+                  <input
+                    type="text"
+                    value={newDefaultPass}
+                    onChange={(e) => setNewDefaultPass(e.target.value)}
+                    className="form-input text-xs py-2 px-3 bg-slate-900 border-slate-700 text-amber-400 font-mono font-bold w-full"
+                    required
+                    autoFocus
+                  />
+                </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2">
+              <div className="shrink-0 px-4 sm:px-5 py-3 border-t border-slate-800 bg-slate-900/90 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowResetModal(false)}
@@ -589,44 +622,66 @@ export const OfficersTab = () => {
 
       {/* RECRUITED OFFICER CREDENTIAL SLIP MODAL */}
       {issuedSlipOfficer && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-panel max-w-md w-full p-6 border-slate-700 shadow-2xl space-y-4 animate-fadeIn text-center">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">
-              <CheckCircle2 className="w-8 h-8" />
-            </div>
-
-            <h3 className="text-lg font-black text-white">
-              EC Officer Recruited Successfully!
-            </h3>
-            <p className="text-xs text-slate-400">
-              Hand these official polling station credentials to the recruited officer:
-            </p>
-
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-left space-y-2 font-mono text-xs">
-              <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
-                <span className="text-slate-400">School:</span>
-                <span className="text-white font-bold">{activeSchool.name}</span>
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto"
+          onClick={() => setIssuedSlipOfficer(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-panel max-w-md w-full my-auto max-h-[calc(100vh-2rem)] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden text-center"
+          >
+            <div className="shrink-0 p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                <h3 className="text-base font-black text-white">
+                  EC Officer Recruited Successfully!
+                </h3>
               </div>
-              <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
-                <span className="text-slate-400">Officer Name:</span>
-                <span className="text-emerald-400 font-bold">{issuedSlipOfficer.name}</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
-                <span className="text-slate-400">Assigned Desk:</span>
-                <span className="text-white">{issuedSlipOfficer.desk}</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
-                <span className="text-slate-400">Username:</span>
-                <span className="text-amber-400 font-bold">{issuedSlipOfficer.username}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Default Password:</span>
-                <span className="text-teal-400 font-bold">{issuedSlipOfficer.password}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-center gap-2 pt-2">
               <button
+                type="button"
+                onClick={() => setIssuedSlipOfficer(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 custom-modal-scroll">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+
+              <p className="text-xs text-slate-400">
+                Hand these official polling station credentials to the recruited officer:
+              </p>
+
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-left space-y-2 font-mono text-xs">
+                <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
+                  <span className="text-slate-400">School:</span>
+                  <span className="text-white font-bold">{activeSchool?.name || "School"}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
+                  <span className="text-slate-400">Officer Name:</span>
+                  <span className="text-emerald-400 font-bold">{issuedSlipOfficer.name}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
+                  <span className="text-slate-400">Assigned Desk:</span>
+                  <span className="text-white">{issuedSlipOfficer.desk}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
+                  <span className="text-slate-400">Username:</span>
+                  <span className="text-amber-400 font-bold">{issuedSlipOfficer.username}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Default Password:</span>
+                  <span className="text-teal-400 font-bold">{issuedSlipOfficer.password}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="shrink-0 px-4 sm:px-5 py-3 border-t border-slate-800 bg-slate-900/90 flex items-center justify-center gap-2">
+              <button
+                type="button"
                 onClick={() => handleCopyCredentials(issuedSlipOfficer)}
                 className="btn-gold text-xs px-4 py-2 flex items-center gap-1.5"
               >
@@ -634,6 +689,7 @@ export const OfficersTab = () => {
                 <span>Copy Credentials Slip</span>
               </button>
               <button
+                type="button"
                 onClick={() => setIssuedSlipOfficer(null)}
                 className="btn-secondary text-xs px-4 py-2"
               >
