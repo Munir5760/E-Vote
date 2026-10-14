@@ -8,7 +8,9 @@ import {
   UserCheck,
   Building2,
   Code,
-  KeyRound
+  KeyRound,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 export const Header = ({ onOpenAdminLogin }) => {
@@ -16,6 +18,8 @@ export const Header = ({ onOpenAdminLogin }) => {
     activeSchool,
     currentUser,
     logout,
+    theme,
+    toggleTheme,
   } = useVoting();
 
   return (
@@ -42,8 +46,28 @@ export const Header = ({ onOpenAdminLogin }) => {
           </div>
         </div>
 
-        {/* Right side: Session Controls / Log Out Buttons */}
+        {/* Right side: Session Controls / Theme Toggle / Log Out Buttons */}
         <div className="flex items-center gap-3">
+          {/* Global Light / Dark Theme Toggle for All Users */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white transition-all flex items-center gap-1.5 text-xs font-semibold shadow-sm cursor-pointer"
+            title={theme === "dark" ? "Switch to Light Theme" : "Switch to Dark Theme"}
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? (
+              <>
+                <Sun className="w-4 h-4 text-amber-400" />
+                <span className="hidden sm:inline text-[11px] text-slate-300">Light</span>
+              </>
+            ) : (
+              <>
+                <Moon className="w-4 h-4 text-indigo-400" />
+                <span className="hidden sm:inline text-[11px] text-slate-700">Dark</span>
+              </>
+            )}
+          </button>
+
           {/* Electoral Officer Session Header */}
           {currentUser?.role === "officer" && (
             <div className="flex items-center gap-3">

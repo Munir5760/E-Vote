@@ -9,6 +9,7 @@ import {
   INITIAL_SCHOOL_ADMINS,
   INITIAL_SUPER_ADMIN,
   INITIAL_OFFICERS,
+  INITIAL_SYSTEM_CONFIG,
 } from "../data/initialData";
 
 const VotingContext = createContext();
@@ -26,6 +27,8 @@ export const VotingProvider = ({ children }) => {
           return {
             ...parsed,
             officers: (parsed.officers && parsed.officers.length > 0) ? parsed.officers : INITIAL_OFFICERS,
+            superAdmin: parsed.superAdmin || INITIAL_SUPER_ADMIN,
+            systemConfig: parsed.systemConfig || INITIAL_SYSTEM_CONFIG,
           };
         }
       }
@@ -41,6 +44,8 @@ export const VotingProvider = ({ children }) => {
       auditLogs: INITIAL_AUDIT_LOGS,
       schoolAdmins: INITIAL_SCHOOL_ADMINS,
       officers: INITIAL_OFFICERS,
+      superAdmin: INITIAL_SUPER_ADMIN,
+      systemConfig: INITIAL_SYSTEM_CONFIG,
     };
   };
 
@@ -49,6 +54,32 @@ export const VotingProvider = ({ children }) => {
   const [activeElectionId, setActiveElectionId] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
   const [toastNotification, setToastNotification] = useState(null);
+
+  // Global Light/Dark Theme state
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem("gh_shs_theme") || "dark";
+    } catch (e) {
+      return "dark";
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("gh_shs_theme", theme);
+      if (theme === "light") {
+        document.documentElement.classList.add("theme-light");
+        document.documentElement.classList.remove("theme-dark");
+      } else {
+        document.documentElement.classList.add("theme-dark");
+        document.documentElement.classList.remove("theme-light");
+      }
+    } catch (e) {}
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  };
 
   // Generate unique tab/session ID to prevent echo loops
   const tabIdRef = useRef(Math.random().toString(36).slice(2) + Date.now().toString(36));
@@ -653,10 +684,11 @@ export const VotingProvider = ({ children }) => {
     const cleanPass = password.trim();
     const cleanSchoolTarget = schoolIdOrCode ? schoolIdOrCode.trim().toLowerCase() : "";
 
-    if (cleanUser === INITIAL_SUPER_ADMIN.username && cleanPass === INITIAL_SUPER_ADMIN.password) {
+    const superAdminAccount = state.superAdmin || INITIAL_SUPER_ADMIN;
+    if (cleanUser === superAdminAccount.username.toLowerCase() && cleanPass === superAdminAccount.password) {
       setCurrentUser({
         role: "super_admin",
-        name: INITIAL_SUPER_ADMIN.name,
+        name: superAdminAccount.name,
       });
       showToast("Logged in as Platform Developer (Super Admin)", "success");
       return { success: true, role: "super_admin" };
@@ -749,6 +781,75 @@ export const VotingProvider = ({ children }) => {
   const logout = () => {
     setCurrentUser(null);
     showToast("Logged out successfully.", "info");
+  };
+
+  const changeDeveloperPassword = (currentPassword, newPassword) => {
+    const superAdminAccount = state.superAdmin || INITIAL_SUPER_ADMIN;
+    if (currentPassword.trim() !== superAdminAccount.password) {
+      return { success: false, message: "Current Developer Password does not match." };
+    }
+    if (newPassword.trim().length < 4) {
+      return { success: false, message: "New password must be at least 4 characters long." };
+    }
+
+    const updatedSuperAdmin = {
+      ...superAdminAccount,
+      password: newPassword.trim(),
+    };
+
+    setState((prev) => ({
+      ...prev,
+      superAdmin: updatedSuperAdmin,
+    }));
+
+    addAuditLog(
+      activeSchoolId,
+      "DEVELOPER_PASSWORD_CHANGE",
+      "Platform Developer",
+      "Platform Developer updated the Super Admin access password."
+    );
+
+    showToast("Developer access password updated successfully!", "success");
+    return { success: true };
+  };
+
+  const updateSystemConfig = (newConfig) => {
+    setState((prev) => ({
+      ...prev,
+      systemConfig: {
+        ...(prev.systemConfig || INITIAL_SYSTEM_CONFIG),
+        ...newConfig,
+      },
+    }));
+
+    addAuditLog(
+      activeSchoolId,
+      "SYSTEM_CONFIG_UPDATED",
+      "Platform Developer",
+      "Platform Developer updated system appearance and background colors."
+    );
+
+    showToast("System background theme & configuration updated!", "success");
+    return { success: true };
+  };
+
+  const updateSchoolAdminPassword = (schoolId, newPassword) => {
+    if (!newPassword || newPassword.trim().length < 3) {
+      return { success: false, message: "Password must be at least 3 characters." };
+    }
+
+    const updatedAdmins = state.schoolAdmins.map((sa) =>
+      sa.schoolId === schoolId ? { ...sa, password: newPassword.trim() } : sa
+    );
+
+    setState((prev) => ({
+      ...prev,
+      schoolAdmins: updatedAdmins,
+    }));
+
+    const targetSchool = state.schools.find((s) => s.id === schoolId);
+    showToast(`Updated EC Admin password for ${targetSchool?.shortName || "School"} to '${newPassword.trim()}'`, "success");
+    return { success: true };
   };
 
   // --- CREATE NEW ELECTION SESSION BY SCHOOL ADMIN ---
@@ -1416,6 +1517,14 @@ export const VotingProvider = ({ children }) => {
         resetAllData,
         toastNotification,
         showToast,
+        theme,
+        setTheme,
+        toggleTheme,
+        systemConfig: state.systemConfig || INITIAL_SYSTEM_CONFIG,
+        superAdmin: state.superAdmin || INITIAL_SUPER_ADMIN,
+        changeDeveloperPassword,
+        updateSystemConfig,
+        updateSchoolAdminPassword,
       }}
     >
       {children}

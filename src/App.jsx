@@ -11,7 +11,7 @@ import { Toast } from "./components/Toast";
 import { ShieldCheck, Lock, RefreshCw, Vote, Building2, KeyRound } from "lucide-react";
 
 const MainAppContent = () => {
-  const { currentUser, resetAllData, activeSchool } = useVoting();
+  const { currentUser, resetAllData, activeSchool, theme, systemConfig } = useVoting();
   const [showAdminLoginModal, setShowAdminLoginModal] = useState(false);
   const [portalMode, setPortalMode] = useState("student"); // 'student' | 'officer' | 'admin'
 
@@ -22,18 +22,35 @@ const MainAppContent = () => {
 
   const isOfficerLoggedIn = currentUser?.role === "officer";
 
-  const schoolColor = activeSchool?.primaryColor;
+  const glow1 = systemConfig?.glowColor1 || activeSchool?.primaryColor || "#10b981";
+  const glow2 = systemConfig?.glowColor2 || "#f59e0b";
+  const bgBase = systemConfig?.backgroundColor || "#030712";
+
+  const dynamicBackground =
+    theme === "light"
+      ? {
+          backgroundColor: "#f8fafc",
+          backgroundImage: `
+            radial-gradient(at 0% 0%, ${glow1}18 0px, transparent 45%),
+            radial-gradient(at 100% 0%, ${glow2}15 0px, transparent 45%),
+            radial-gradient(at 50% 100%, ${glow1}10 0px, transparent 50%)
+          `,
+        }
+      : {
+          backgroundColor: bgBase,
+          backgroundImage: `
+            radial-gradient(at 0% 0%, ${glow1}25 0px, transparent 45%),
+            radial-gradient(at 100% 0%, ${glow2}20 0px, transparent 45%),
+            radial-gradient(at 50% 100%, ${glow1}18 0px, transparent 50%)
+          `,
+        };
 
   return (
     <div
-      className="min-h-screen flex flex-col justify-between transition-colors duration-500"
-      style={
-        schoolColor
-          ? {
-              background: `radial-gradient(circle at 50% 0%, ${schoolColor}22 0%, #030712 70%)`,
-            }
-          : {}
-      }
+      className={`min-h-screen flex flex-col justify-between transition-colors duration-500 ${
+        theme === "light" ? "theme-light" : "theme-dark"
+      }`}
+      style={dynamicBackground}
     >
       {/* Header Bar */}
       <Header onOpenAdminLogin={() => setShowAdminLoginModal(true)} />

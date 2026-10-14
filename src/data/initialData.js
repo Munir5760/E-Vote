@@ -23,6 +23,14 @@ export const INITIAL_SUPER_ADMIN = {
   name: "Platform Developer (Super Admin)",
 };
 
+export const INITIAL_SYSTEM_CONFIG = {
+  defaultPassword: "123",
+  glowColor1: "#10b981",
+  glowColor2: "#f59e0b",
+  backgroundColor: "#030712",
+  presetName: "Ghana Emerald & Gold (Default)",
+};
+
 export const INITIAL_OFFICERS = [
   {
     id: "off_ach_1",
