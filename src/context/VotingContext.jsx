@@ -634,15 +634,51 @@ export const VotingProvider = ({ children }) => {
     return matched;
   };
 
-  const loginAsOfficer = (username, password, schoolId = "") => {
+  const loginAsOfficer = (username, password, schoolCodeOrId = "") => {
     const cleanUser = username.trim().toLowerCase();
     const cleanPass = password.trim();
+    const cleanInput = (schoolCodeOrId || "").trim().toLowerCase();
 
-    const officer = (state.officers || []).find(
-      (o) => o.username.toLowerCase() === cleanUser && (!schoolId || o.schoolId === schoolId)
-    );
+    // Resolve target school if schoolCode or schoolId was provided
+    let targetSchoolId = "";
+    if (cleanInput) {
+      const matchedSchool = (state.schools || []).find(
+        (s) =>
+          s.id.toLowerCase() === cleanInput ||
+          (s.code && s.code.toLowerCase() === cleanInput)
+      );
+      if (matchedSchool) {
+        targetSchoolId = matchedSchool.id;
+      } else {
+        // If code provided does not match any registered school institution
+        return {
+          success: false,
+          message: `School Code '${schoolCodeOrId}' not found. Please verify the school code or leave the field blank to auto-detect.`,
+        };
+      }
+    }
+
+    const officer = (state.officers || []).find((o) => {
+      const userMatches = o.username.toLowerCase() === cleanUser;
+      if (!userMatches) return false;
+      if (!targetSchoolId) return true; // School is not compulsory; match by officer credentials directly!
+      return o.schoolId === targetSchoolId;
+    });
 
     if (!officer) {
+      if (targetSchoolId) {
+        const assignedSchool = (state.schools || []).find((s) => s.id === targetSchoolId);
+        const existsElsewhere = (state.officers || []).find(
+          (o) => o.username.toLowerCase() === cleanUser
+        );
+        if (existsElsewhere) {
+          const actualSchool = (state.schools || []).find((s) => s.id === existsElsewhere.schoolId);
+          return {
+            success: false,
+            message: `Officer '${username}' is assigned to ${actualSchool?.name || "another institution"} (${actualSchool?.code || ""}), not ${assignedSchool?.name || "the entered school"}. Please clear the School Code or enter the correct code.`,
+          };
+        }
+      }
       return {
         success: false,
         message: `Invalid officer username '${username}'. Please verify the credentials issued by the Electoral Commissioner.`,
