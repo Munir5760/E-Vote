@@ -71,32 +71,49 @@ export const VotingProvider = ({ children }) => {
 
   const [state, setState] = useState(loadStoredState);
 
-  // Persisted current logged in session (Super Admin, School EC Admin, Officer, Voter)
-  const [currentUser, setCurrentUser] = useState(() => {
+  const loadUserSession = () => {
     try {
-      const saved = localStorage.getItem(USER_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.role) {
-          return parsed;
-        }
+      const fromSession = sessionStorage.getItem(USER_STORAGE_KEY);
+      if (fromSession) {
+        const parsed = JSON.parse(fromSession);
+        if (parsed && parsed.role) return parsed;
       }
-    } catch (e) {
-      console.error("Failed to restore user session from localStorage:", e);
-    }
+    } catch {}
+    try {
+      const fromLocal = localStorage.getItem(USER_STORAGE_KEY);
+      if (fromLocal) {
+        const parsed = JSON.parse(fromLocal);
+        if (parsed && parsed.role) return parsed;
+      }
+    } catch {}
     return null;
-  });
+  };
+
+  const saveUserSession = (user) => {
+    try {
+      if (user) {
+        const json = JSON.stringify(user);
+        try { sessionStorage.setItem(USER_STORAGE_KEY, json); } catch {}
+        try { localStorage.setItem(USER_STORAGE_KEY, json); } catch {}
+      } else {
+        try { sessionStorage.removeItem(USER_STORAGE_KEY); } catch {}
+        try { localStorage.removeItem(USER_STORAGE_KEY); } catch {}
+      }
+    } catch {}
+  };
+
+  // Persisted current logged in session (Super Admin, School EC Admin, Officer, Voter)
+  const [currentUser, setCurrentUser] = useState(loadUserSession);
 
   // Persisted active school ID
   const [activeSchoolId, setActiveSchoolId] = useState(() => {
     try {
-      const savedUserStr = localStorage.getItem(USER_STORAGE_KEY);
-      if (savedUserStr) {
-        const savedUser = JSON.parse(savedUserStr);
-        if (savedUser?.schoolId) return savedUser.schoolId;
-      }
-      const savedSchoolId = localStorage.getItem(ACTIVE_SCHOOL_KEY);
-      if (savedSchoolId) return savedSchoolId;
+      const savedUser = loadUserSession();
+      if (savedUser?.schoolId) return savedUser.schoolId;
+      const fromSession = sessionStorage.getItem(ACTIVE_SCHOOL_KEY);
+      if (fromSession) return fromSession;
+      const fromLocal = localStorage.getItem(ACTIVE_SCHOOL_KEY);
+      if (fromLocal) return fromLocal;
     } catch {}
     return INITIAL_SCHOOLS[0].id;
   });
@@ -104,48 +121,42 @@ export const VotingProvider = ({ children }) => {
   // Persisted active election ID
   const [activeElectionId, setActiveElectionId] = useState(() => {
     try {
-      const savedUserStr = localStorage.getItem(USER_STORAGE_KEY);
-      if (savedUserStr) {
-        const parsedUser = JSON.parse(savedUserStr);
-        if (parsedUser?.electionId) return parsedUser.electionId;
-      }
-      const savedElectionId = localStorage.getItem(ACTIVE_ELECTION_KEY);
-      if (savedElectionId) return savedElectionId;
+      const savedUser = loadUserSession();
+      if (savedUser?.electionId) return savedUser.electionId;
+      const fromSession = sessionStorage.getItem(ACTIVE_ELECTION_KEY);
+      if (fromSession) return fromSession;
+      const fromLocal = localStorage.getItem(ACTIVE_ELECTION_KEY);
+      if (fromLocal) return fromLocal;
     } catch {}
     return "";
   });
 
   const [toastNotification, setToastNotification] = useState(null);
 
-  // Sync user session to localStorage
+  // Sync user session to storage
   useEffect(() => {
-    try {
-      if (currentUser) {
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(currentUser));
-      } else {
-        localStorage.removeItem(USER_STORAGE_KEY);
-      }
-    } catch (e) {
-      console.error("Failed to save user session:", e);
-    }
+    saveUserSession(currentUser);
   }, [currentUser]);
 
-  // Sync activeSchoolId to localStorage
+  // Sync activeSchoolId to storage
   useEffect(() => {
     try {
       if (activeSchoolId) {
-        localStorage.setItem(ACTIVE_SCHOOL_KEY, activeSchoolId);
+        try { sessionStorage.setItem(ACTIVE_SCHOOL_KEY, activeSchoolId); } catch {}
+        try { localStorage.setItem(ACTIVE_SCHOOL_KEY, activeSchoolId); } catch {}
       }
     } catch {}
   }, [activeSchoolId]);
 
-  // Sync activeElectionId to localStorage
+  // Sync activeElectionId to storage
   useEffect(() => {
     try {
       if (activeElectionId) {
-        localStorage.setItem(ACTIVE_ELECTION_KEY, activeElectionId);
+        try { sessionStorage.setItem(ACTIVE_ELECTION_KEY, activeElectionId); } catch {}
+        try { localStorage.setItem(ACTIVE_ELECTION_KEY, activeElectionId); } catch {}
       } else {
-        localStorage.removeItem(ACTIVE_ELECTION_KEY);
+        try { sessionStorage.removeItem(ACTIVE_ELECTION_KEY); } catch {}
+        try { localStorage.removeItem(ACTIVE_ELECTION_KEY); } catch {}
       }
     } catch {}
   }, [activeElectionId]);
@@ -496,14 +507,16 @@ export const VotingProvider = ({ children }) => {
     setActiveSchoolId(targetSchool.id);
     setActiveElectionId(targetElection.id);
 
-    setCurrentUser({
+    const voterUser = {
       role: "voter",
       schoolId: targetSchool.id,
       electionId: targetElection.id,
       student,
       school: targetSchool,
       election: targetElection,
-    });
+    };
+    saveUserSession(voterUser);
+    setCurrentUser(voterUser);
 
     addAuditLog(
       targetSchool.id,
@@ -655,7 +668,7 @@ export const VotingProvider = ({ children }) => {
     setActiveSchoolId(officerSchool.id);
     setActiveElectionId("");
 
-    setCurrentUser({
+    const offUser = {
       role: "officer",
       officerId: officer.id,
       schoolId: officer.schoolId,
@@ -664,7 +677,9 @@ export const VotingProvider = ({ children }) => {
       officerDesk: officer.desk,
       phone: officer.phone,
       isPasswordChanged: officer.isPasswordChanged,
-    });
+    };
+    saveUserSession(offUser);
+    setCurrentUser(offUser);
 
     addAuditLog(
       officer.schoolId,
@@ -888,10 +903,12 @@ export const VotingProvider = ({ children }) => {
 
     const superAdminAccount = state.superAdmin || INITIAL_SUPER_ADMIN;
     if (cleanUser === superAdminAccount.username.toLowerCase() && cleanPass === superAdminAccount.password) {
-      setCurrentUser({
+      const devUser = {
         role: "super_admin",
         name: superAdminAccount.name,
-      });
+      };
+      saveUserSession(devUser);
+      setCurrentUser(devUser);
       showToast("Logged in as Platform Developer (Super Admin)", "success");
       return { success: true, role: "super_admin" };
     }
@@ -933,13 +950,15 @@ export const VotingProvider = ({ children }) => {
       setActiveSchoolId(targetSchool.id);
       setActiveElectionId("");
 
-      setCurrentUser({
+      const adminUser = {
         role: "school_admin",
         schoolId: targetSchool.id,
         username: schoolAdmin.username,
         name: schoolAdmin.name,
         school: targetSchool,
-      });
+      };
+      saveUserSession(adminUser);
+      setCurrentUser(adminUser);
       showToast(`Logged in as EC Administrator for ${targetSchool.name}`, "success");
       return { success: true, role: "school_admin", school: targetSchool };
     }
@@ -976,13 +995,15 @@ export const VotingProvider = ({ children }) => {
     setActiveSchoolId(chosenAdmin.schoolId);
     setActiveElectionId("");
 
-    setCurrentUser({
+    const adminUser = {
       role: "school_admin",
       schoolId: chosenAdmin.schoolId,
       username: chosenAdmin.username,
       name: chosenAdmin.name,
       school,
-    });
+    };
+    saveUserSession(adminUser);
+    setCurrentUser(adminUser);
     showToast(`Logged in as EC Administrator for ${school?.name}`, "success");
     return { success: true, role: "school_admin", school };
   };
@@ -995,30 +1016,35 @@ export const VotingProvider = ({ children }) => {
     setActiveSchoolId(schoolId);
     setActiveElectionId("");
 
-    setCurrentUser({
+    const switchedUser = {
       role: "school_admin",
       schoolId: schoolId,
       username: sa.username,
       name: sa.name,
       school,
       switchedFromSuperAdmin: currentUser?.role === "super_admin" || Boolean(currentUser?.switchedFromSuperAdmin),
-    });
+    };
+    saveUserSession(switchedUser);
+    setCurrentUser(switchedUser);
     showToast(`Switched to EC Administrator console for ${school.name}`, "info");
   };
 
   const switchToSuperAdmin = () => {
     const superAdminAccount = state.superAdmin || INITIAL_SUPER_ADMIN;
-    setCurrentUser({
+    const devUser = {
       role: "super_admin",
       name: superAdminAccount.name,
-    });
+    };
+    saveUserSession(devUser);
+    setCurrentUser(devUser);
     showToast("Returned to Platform Developer Console", "info");
   };
 
   const logout = () => {
+    saveUserSession(null);
     setCurrentUser(null);
     try {
-      localStorage.removeItem(USER_STORAGE_KEY);
+      sessionStorage.removeItem(ACTIVE_ELECTION_KEY);
       localStorage.removeItem(ACTIVE_ELECTION_KEY);
     } catch {}
     showToast("Logged out successfully.", "info");
@@ -1792,12 +1818,15 @@ export const VotingProvider = ({ children }) => {
   };
 
   const resetAllData = () => {
+    saveUserSession(null);
     try {
+      sessionStorage.clear();
       localStorage.removeItem(LOCAL_STORAGE_KEY);
       localStorage.removeItem(USER_STORAGE_KEY);
       localStorage.removeItem(ACTIVE_SCHOOL_KEY);
       localStorage.removeItem(ACTIVE_ELECTION_KEY);
       localStorage.removeItem("gh_shs_admin_tab");
+      localStorage.removeItem("gh_shs_portal_mode");
     } catch {}
     setState({
       schools: INITIAL_SCHOOLS,

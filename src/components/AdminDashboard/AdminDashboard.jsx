@@ -7,7 +7,6 @@ import { CandidatesTab } from "./CandidatesTab";
 import { ResultsTab } from "./ResultsTab";
 import { AuditLogTab } from "./AuditLogTab";
 import { PollingStationPortal } from "./PollingStationPortal";
-import { SuperAdminConsole } from "./SuperAdminConsole";
 import { LiveCollationDisplay } from "./LiveCollationDisplay";
 import { OfficersTab } from "./OfficersTab";
 import { NoElectionSelectedPrompt } from "./NoElectionSelectedPrompt";
@@ -45,11 +44,6 @@ export const AdminDashboard = () => {
   const [elecCode, setElecCode] = useState("");
   const [elecType, setElecType] = useState("General Prefectural");
   const [elecDesc, setElecDesc] = useState("");
-
-  // If Platform Developer (Super Admin) is logged in, show Super Admin Console
-  if (currentUser?.role === "super_admin") {
-    return <SuperAdminConsole />;
-  }
 
   const schoolElections = (elections || []).filter((e) => e.schoolId === (activeSchool?.id || ""));
 

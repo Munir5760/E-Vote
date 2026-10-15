@@ -4,6 +4,7 @@ import { Header } from "./components/Header";
 import { VoterLogin } from "./components/VoterPortal/VoterLogin";
 import { VotingBooth } from "./components/VoterPortal/VotingBooth";
 import { AdminDashboard } from "./components/AdminDashboard/AdminDashboard";
+import { SuperAdminConsole } from "./components/AdminDashboard/SuperAdminConsole";
 import { AdminLogin } from "./components/AdminDashboard/AdminLogin";
 import { PollingStationPortal } from "./components/AdminDashboard/PollingStationPortal";
 import { OfficerLogin } from "./components/AdminDashboard/OfficerLogin";
@@ -69,7 +70,9 @@ const MainAppContent = () => {
 
       {/* Main Body View */}
       <main className="flex-grow pb-12">
-        {isAdminLoggedIn ? (
+        {currentUser?.role === "super_admin" ? (
+          <SuperAdminConsole />
+        ) : isAdminLoggedIn ? (
           <AdminDashboard />
         ) : isOfficerLoggedIn ? (
           <div className="max-w-7xl mx-auto py-6 px-4">
