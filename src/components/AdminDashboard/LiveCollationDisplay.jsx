@@ -21,7 +21,10 @@ export const LiveCollationDisplay = ({ onClose }) => {
     positions,
     candidates,
     voters,
+    theme,
   } = useVoting();
+
+  const isLight = theme === "light";
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [density, setDensity] = useState("compact"); // 'compact' | 'comfortable'
@@ -115,23 +118,27 @@ export const LiveCollationDisplay = ({ onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[100] bg-[#070b14] text-white overflow-y-auto flex flex-col justify-between selection:bg-emerald-500 selection:text-white"
+      className={`fixed inset-0 z-[100] ${
+        isLight ? "bg-slate-100 text-slate-900" : "force-dark dark-surface bg-[#060a14] text-white"
+      } overflow-y-auto flex flex-col justify-between selection:bg-emerald-500 selection:text-white`}
       style={{
-        backgroundColor: "#060a14",
-        backgroundImage: `radial-gradient(circle at 50% -15%, ${schoolColor}25 0%, transparent 60%)`,
+        backgroundColor: isLight ? "#f8fafc" : "#060a14",
+        backgroundImage: isLight
+          ? `radial-gradient(circle at 50% -15%, ${schoolColor}15 0%, transparent 60%)`
+          : `radial-gradient(circle at 50% -15%, ${schoolColor}25 0%, transparent 60%)`,
         isolation: "isolate",
       }}
     >
       {/* 100% Solid Backdrop Guard to guarantee no underlying screen bleed-through */}
-      <div className="fixed inset-0 bg-[#060a14] -z-10 pointer-events-none" />
+      <div className={`fixed inset-0 ${isLight ? "bg-[#f8fafc]" : "bg-[#060a14]"} -z-10 pointer-events-none`} />
 
       {/* Top Collation Broadcast Bar */}
-      <header className="border-b border-slate-800 bg-[#0a101f] px-4 py-2.5 md:px-6 md:py-3 sticky top-0 z-30 shadow-2xl">
+      <header className={`border-b ${isLight ? "border-slate-200 bg-white shadow-md" : "border-slate-800 bg-[#0a101f] shadow-2xl"} px-4 py-2.5 md:px-6 md:py-3 sticky top-0 z-30`}>
         <div className="max-w-[1920px] mx-auto flex flex-wrap items-center justify-between gap-3">
           {/* School & Election Title */}
           <div className="flex items-center gap-3">
             <div
-              className="w-11 h-11 md:w-12 md:h-12 rounded-xl bg-slate-900 border-2 flex items-center justify-center overflow-hidden shadow-lg shrink-0"
+              className={`w-11 h-11 md:w-12 md:h-12 rounded-xl ${isLight ? "bg-slate-100 shadow-sm" : "bg-slate-900 shadow-lg"} border-2 flex items-center justify-center overflow-hidden shrink-0`}
               style={{ borderColor: schoolColor }}
             >
               {activeSchool?.logo ? (
@@ -141,33 +148,49 @@ export const LiveCollationDisplay = ({ onClose }) => {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <Building2 className="w-6 h-6 text-amber-400" />
+                <Building2 className={`w-6 h-6 ${isLight ? "text-amber-600" : "text-amber-400"}`} />
               )}
             </div>
 
             <div>
               <div className="flex items-center gap-2">
                 {isElectionEnded ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-400" /> OFFICIAL CERTIFIED RESULTS
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                    isLight
+                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                      : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                  }`}>
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" /> OFFICIAL CERTIFIED RESULTS
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse">
-                    <Radio className="w-3 h-3 text-red-400" /> LIVE COLLATION FEED
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                    isLight
+                      ? "bg-red-100 text-red-800 border border-red-300"
+                      : "bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse"
+                  }`}>
+                    <Radio className="w-3 h-3 text-red-500" /> LIVE COLLATION FEED
                   </span>
                 )}
-                <span className="text-[11px] font-mono font-bold bg-slate-800 text-amber-300 px-2 py-0.5 rounded border border-slate-700">
+                <span className={`text-[11px] font-mono font-bold ${
+                  isLight
+                    ? "bg-amber-100 text-amber-800 border border-amber-300"
+                    : "bg-slate-800 text-amber-300 border border-slate-700"
+                } px-2 py-0.5 rounded`}>
                   Code: {activeElection?.code || "N/A"}
                 </span>
-                <span className="hidden sm:inline-block text-[10px] text-slate-400 font-bold bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700/80">
+                <span className={`hidden sm:inline-block text-[10px] font-bold ${
+                  isLight
+                    ? "bg-slate-100 text-slate-600 border border-slate-200"
+                    : "text-slate-400 bg-slate-800/80 border border-slate-700/80"
+                } px-2 py-0.5 rounded`}>
                   {electionPositions.length} {electionPositions.length === 1 ? "Portfolio" : "Portfolios"}
                 </span>
               </div>
-              <h1 className="text-lg md:text-xl font-black text-white tracking-tight mt-0.5">
+              <h1 className={`text-lg md:text-xl font-black ${isLight ? "text-slate-900" : "text-white"} tracking-tight mt-0.5`}>
                 {activeSchool?.name} — {activeElection?.title}
               </h1>
               {activeSchool?.motto && (
-                <p className="text-[11px] text-slate-400 italic hidden sm:block">"{activeSchool.motto}"</p>
+                <p className={`text-[11px] ${isLight ? "text-slate-500" : "text-slate-400"} italic hidden sm:block`}>"{activeSchool.motto}"</p>
               )}
             </div>
           </div>
@@ -175,33 +198,33 @@ export const LiveCollationDisplay = ({ onClose }) => {
           {/* Quick Metrics & Controls */}
           <div className="flex items-center gap-2.5 md:gap-3 flex-wrap">
             {/* Live Voter Turnout */}
-            <div className="bg-[#0d1629] border border-slate-800 px-3 py-1.5 rounded-xl text-center shadow-inner">
-              <div className="text-[9px] uppercase font-bold text-slate-400 tracking-wider flex items-center justify-center gap-1">
-                <TrendingUp className="w-3 h-3 text-emerald-400" /> Turnout
+            <div className={`${isLight ? "bg-slate-50 border-slate-200 shadow-sm" : "bg-[#0d1629] border-slate-800 shadow-inner"} border px-3 py-1.5 rounded-xl text-center`}>
+              <div className={`text-[9px] uppercase font-bold ${isLight ? "text-slate-500" : "text-slate-400"} tracking-wider flex items-center justify-center gap-1`}>
+                <TrendingUp className="w-3 h-3 text-emerald-500" /> Turnout
               </div>
-              <div className="text-lg md:text-xl font-black text-emerald-400 font-display">
+              <div className={`text-lg md:text-xl font-black ${isLight ? "text-emerald-700" : "text-emerald-400"} font-display`}>
                 {turnoutPercent}%
               </div>
             </div>
 
             {/* Polls Closing / Status Timer */}
-            <div className="bg-[#0d1629] border border-slate-800 px-3 py-1.5 rounded-xl text-center shadow-inner">
-              <div className="text-[9px] uppercase font-bold text-slate-400 tracking-wider flex items-center justify-center gap-1">
-                <Clock className="w-3 h-3 text-amber-400" /> {isElectionEnded ? "Status" : "Remaining"}
+            <div className={`${isLight ? "bg-slate-50 border-slate-200 shadow-sm" : "bg-[#0d1629] border-slate-800 shadow-inner"} border px-3 py-1.5 rounded-xl text-center`}>
+              <div className={`text-[9px] uppercase font-bold ${isLight ? "text-slate-500" : "text-slate-400"} tracking-wider flex items-center justify-center gap-1`}>
+                <Clock className="w-3 h-3 text-amber-500" /> {isElectionEnded ? "Status" : "Remaining"}
               </div>
-              <div className="text-xs md:text-sm font-mono font-extrabold text-amber-300 mt-0.5">
+              <div className={`text-xs md:text-sm font-mono font-extrabold ${isLight ? "text-amber-800" : "text-amber-300"} mt-0.5`}>
                 {isElectionEnded ? "Collation Sealed" : formatTimer(secondsLeft)}
               </div>
             </div>
 
             {/* Density Selector */}
-            <div className="flex items-center bg-[#070d1a] border border-slate-800 rounded-xl p-0.5">
+            <div className={`flex items-center ${isLight ? "bg-slate-100 border-slate-200" : "bg-[#070d1a] border-slate-800"} border rounded-xl p-0.5`}>
               <button
                 onClick={() => setDensity("compact")}
                 className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
                   density === "compact"
-                    ? "bg-emerald-500 text-slate-950 shadow-sm"
-                    : "text-slate-400 hover:text-white"
+                    ? isLight ? "bg-emerald-600 text-white shadow-sm" : "bg-emerald-500 text-slate-950 shadow-sm"
+                    : isLight ? "text-slate-600 hover:text-slate-900" : "text-slate-400 hover:text-white"
                 }`}
                 title="Compact View (fits many portfolios on screen)"
               >
@@ -211,8 +234,8 @@ export const LiveCollationDisplay = ({ onClose }) => {
                 onClick={() => setDensity("comfortable")}
                 className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
                   density === "comfortable"
-                    ? "bg-emerald-500 text-slate-950 shadow-sm"
-                    : "text-slate-400 hover:text-white"
+                    ? isLight ? "bg-emerald-600 text-white shadow-sm" : "bg-emerald-500 text-slate-950 shadow-sm"
+                    : isLight ? "text-slate-600 hover:text-slate-900" : "text-slate-400 hover:text-white"
                 }`}
                 title="Comfortable View"
               >
@@ -221,8 +244,8 @@ export const LiveCollationDisplay = ({ onClose }) => {
             </div>
 
             {/* Column Layout Selector */}
-            <div className="hidden lg:flex items-center bg-[#070d1a] border border-slate-800 rounded-xl p-0.5">
-              <span className="text-[9px] font-bold text-slate-500 px-1.5 uppercase">
+            <div className={`hidden lg:flex items-center ${isLight ? "bg-slate-100 border-slate-200" : "bg-[#070d1a] border-slate-800"} border rounded-xl p-0.5`}>
+              <span className={`text-[9px] font-bold ${isLight ? "text-slate-500" : "text-slate-500"} px-1.5 uppercase`}>
                 <LayoutGrid className="w-3 h-3 inline mr-0.5" />
               </span>
               {["auto", "2", "3", "4"].map((col) => (
@@ -231,8 +254,8 @@ export const LiveCollationDisplay = ({ onClose }) => {
                   onClick={() => setColumnLayout(col)}
                   className={`px-1.5 py-1 rounded-lg text-[10px] font-bold capitalize transition-all ${
                     columnLayout === col
-                      ? "bg-slate-700 text-white shadow-sm"
-                      : "text-slate-400 hover:text-white"
+                      ? isLight ? "bg-slate-800 text-white shadow-sm" : "bg-slate-700 text-white shadow-sm"
+                      : isLight ? "text-slate-600 hover:text-slate-900" : "text-slate-400 hover:text-white"
                   }`}
                   title={`${col} Column Grid Layout`}
                 >
@@ -245,7 +268,11 @@ export const LiveCollationDisplay = ({ onClose }) => {
             <div className="flex items-center gap-1.5">
               <button
                 onClick={toggleFullscreen}
-                className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition-all shadow-md"
+                className={`p-2 rounded-xl ${
+                  isLight
+                    ? "bg-white hover:bg-slate-100 border-slate-300 text-slate-700"
+                    : "bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-300 hover:text-white"
+                } border transition-all shadow-sm`}
                 title={isFullscreen ? "Exit Fullscreen" : "Enter Projector Fullscreen"}
               >
                 {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -254,7 +281,11 @@ export const LiveCollationDisplay = ({ onClose }) => {
               {onClose && (
                 <button
                   onClick={onClose}
-                  className="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-1 transition-all shadow-md"
+                  className={`px-3 py-2 rounded-xl ${
+                    isLight
+                      ? "bg-white hover:bg-slate-100 border-slate-300 text-slate-700"
+                      : "bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-300 hover:text-white"
+                  } border text-xs font-bold flex items-center gap-1 transition-all shadow-sm`}
                 >
                   <X className="w-3.5 h-3.5" /> Exit
                 </button>
@@ -268,29 +299,33 @@ export const LiveCollationDisplay = ({ onClose }) => {
       <main className="max-w-[1920px] mx-auto w-full px-3 py-3 md:px-6 md:py-4 space-y-3 flex-grow">
         {/* Grounds Display Info Notice */}
         {showNotice && (
-          <div className="bg-[#0c1427] border border-slate-800/90 px-3.5 py-2 rounded-xl flex items-center justify-between text-xs text-slate-300 shadow-md">
+          <div className={`${
+            isLight
+              ? "bg-amber-50 border-amber-200 text-amber-950 shadow-sm"
+              : "bg-[#0c1427] border-slate-800/90 text-slate-300 shadow-md"
+          } border px-3.5 py-2 rounded-xl flex items-center justify-between text-xs`}>
             <div className="flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <Sparkles className={`w-3.5 h-3.5 ${isLight ? "text-amber-600" : "text-amber-400"} shrink-0`} />
               <span className="text-[11px] md:text-xs">
                 {isElectionEnded ? (
                   <>
-                    <strong className="text-emerald-400 font-bold">Official Certified Results:</strong> Election concluded. Final vote totals and percentage shares are certified.
+                    <strong className={`${isLight ? "text-emerald-800" : "text-emerald-400"} font-bold`}>Official Certified Results:</strong> Election concluded. Final vote totals and percentage shares are certified.
                   </>
                 ) : (
                   <>
-                    <strong className="text-amber-300 font-bold">Live Grounds Progress:</strong> Showing live candidate progress visually via green status bars. Certified percentages and totals will be displayed once concluded.
+                    <strong className={`${isLight ? "text-amber-900" : "text-amber-300"} font-bold`}>Live Grounds Progress:</strong> Showing live candidate progress visually via green status bars. Certified percentages and totals will be displayed once concluded.
                   </>
                 )}
               </span>
             </div>
             <div className="flex items-center gap-3 shrink-0">
-              <div className="flex items-center gap-1.5 font-mono text-[10px] text-emerald-400">
-                <span className={`w-1.5 h-1.5 rounded-full ${isElectionEnded ? "bg-emerald-400" : "bg-emerald-400 animate-ping"}`}></span>
+              <div className={`flex items-center gap-1.5 font-mono text-[10px] ${isLight ? "text-emerald-800 font-bold" : "text-emerald-400"}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${isElectionEnded ? "bg-emerald-500" : "bg-emerald-500 animate-ping"}`}></span>
                 <span>{isElectionEnded ? "Certified Final" : "Live Sync"}</span>
               </div>
               <button
                 onClick={() => setShowNotice(false)}
-                className="text-slate-500 hover:text-slate-300 p-0.5 rounded transition-colors"
+                className={`${isLight ? "text-slate-400 hover:text-slate-700" : "text-slate-500 hover:text-slate-300"} p-0.5 rounded transition-colors`}
                 title="Dismiss Notice to free screen space"
               >
                 <X className="w-3 h-3" />
@@ -311,16 +346,20 @@ export const LiveCollationDisplay = ({ onClose }) => {
             return (
               <div
                 key={pos.id}
-                className="bg-[#0d1527] border border-slate-800/90 rounded-2xl shadow-xl p-3 md:p-3.5 flex flex-col justify-between relative overflow-hidden transition-all"
+                className={`${
+                  isLight
+                    ? "bg-white border-slate-200 shadow-md text-slate-900"
+                    : "bg-[#0d1527] border-slate-800/90 shadow-xl text-white"
+                } border rounded-2xl p-3 md:p-3.5 flex flex-col justify-between relative overflow-hidden transition-all`}
               >
                 {/* Position Title Bar */}
-                <div className="border-b border-slate-800/80 pb-2 mb-2 flex items-center justify-between gap-2">
+                <div className={`border-b ${isLight ? "border-slate-200" : "border-slate-800/80"} pb-2 mb-2 flex items-center justify-between gap-2`}>
                   <div className="min-w-0">
-                    <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider block">
+                    <span className={`text-[9px] uppercase font-bold ${isLight ? "text-slate-500" : "text-slate-400"} tracking-wider block`}>
                       Contested Office
                     </span>
-                    <h3 className="text-sm md:text-base font-black text-white flex items-center gap-1.5 truncate">
-                      <Award className="w-4 h-4 text-amber-400 shrink-0" />
+                    <h3 className={`text-sm md:text-base font-black ${isLight ? "text-slate-900" : "text-white"} flex items-center gap-1.5 truncate`}>
+                      <Award className={`w-4 h-4 ${isLight ? "text-amber-600" : "text-amber-400"} shrink-0`} />
                       <span className="truncate">{pos.title}</span>
                     </h3>
                   </div>
@@ -328,9 +367,15 @@ export const LiveCollationDisplay = ({ onClose }) => {
                   <span
                     className={`px-2 py-0.5 rounded-full text-[9px] font-bold shrink-0 ${
                       isElectionEnded
-                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                        ? isLight
+                          ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                          : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
                         : totalVotesForPos > 0
-                        ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                        ? isLight
+                          ? "bg-amber-100 text-amber-800 border border-amber-300"
+                          : "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                        : isLight
+                        ? "bg-slate-100 text-slate-600 border border-slate-200"
                         : "bg-slate-800 text-slate-400 border border-slate-700"
                     }`}
                   >
@@ -345,7 +390,7 @@ export const LiveCollationDisplay = ({ onClose }) => {
                 {/* Candidate Progress Cards */}
                 <div className={density === "compact" ? "space-y-1.5" : "space-y-2.5"}>
                   {posCandidates.length === 0 ? (
-                    <div className="text-xs text-slate-500 italic py-4 text-center">
+                    <div className={`text-xs ${isLight ? "text-slate-400" : "text-slate-500"} italic py-4 text-center`}>
                       No nominated candidates for this position.
                     </div>
                   ) : (
@@ -363,8 +408,12 @@ export const LiveCollationDisplay = ({ onClose }) => {
                             density === "compact" ? "p-2" : "p-3"
                           } ${
                             isLeader
-                              ? "bg-[#0f1d38] border-emerald-500/50 shadow-md shadow-emerald-950/40"
-                              : "bg-[#090f1e] border-slate-800/90"
+                              ? isLight
+                                ? "bg-emerald-50/70 border-emerald-500 text-emerald-950 shadow-sm"
+                                : "bg-[#0f1d38] border-emerald-500/50 shadow-md shadow-emerald-950/40 text-white"
+                              : isLight
+                              ? "bg-slate-50 border-slate-200 text-slate-900"
+                              : "bg-[#090f1e] border-slate-800/90 text-white"
                           }`}
                         >
                           <div className="flex items-center justify-between gap-2.5">
@@ -373,25 +422,29 @@ export const LiveCollationDisplay = ({ onClose }) => {
                               <img
                                 src={cand.photo}
                                 alt={cand.name}
-                                className={`rounded-lg object-cover border border-slate-700 shadow-sm shrink-0 ${
+                                className={`rounded-lg object-cover ${isLight ? "border-slate-200" : "border-slate-700"} border shadow-sm shrink-0 ${
                                   density === "compact" ? "w-8 h-8 md:w-9 md:h-9" : "w-11 h-11"
                                 }`}
                               />
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <h4 className="text-xs md:text-sm font-bold text-white truncate leading-tight">
+                                  <h4 className={`text-xs md:text-sm font-bold ${isLight ? "text-slate-900" : "text-white"} truncate leading-tight`}>
                                     {cand.name}
                                   </h4>
                                   {isLeader && (
-                                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-black uppercase tracking-wider shrink-0">
-                                      <Sparkles className="w-2.5 h-2.5 text-amber-400" />
+                                    <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded ${
+                                      isLight
+                                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                                        : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                                    } text-[9px] font-black uppercase tracking-wider shrink-0`}>
+                                      <Sparkles className={`w-2.5 h-2.5 ${isLight ? "text-amber-600" : "text-amber-400"}`} />
                                       {isElectionEnded ? "ELECTED" : "LEAD"}
                                     </span>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-1.5 text-[10px] text-slate-400 truncate mt-0.5">
+                                <div className={`flex items-center gap-1.5 text-[10px] ${isLight ? "text-slate-600" : "text-slate-400"} truncate mt-0.5`}>
                                   {cand.alias && (
-                                    <span className="text-amber-400/90 font-medium truncate">
+                                    <span className={`${isLight ? "text-amber-700 font-semibold" : "text-amber-400/90 font-medium"} truncate`}>
                                       "{cand.alias}"
                                     </span>
                                   )}
@@ -407,24 +460,28 @@ export const LiveCollationDisplay = ({ onClose }) => {
                             <div className="text-right shrink-0 pl-1">
                               {isElectionEnded ? (
                                 <>
-                                  <div className="text-xs md:text-sm font-black font-display tracking-tight text-white flex items-baseline justify-end gap-0.5">
-                                    <span className={isLeader ? "text-amber-400" : "text-slate-200"}>
+                                  <div className={`text-xs md:text-sm font-black font-display tracking-tight ${isLight ? "text-slate-900" : "text-white"} flex items-baseline justify-end gap-0.5`}>
+                                    <span className={isLeader ? (isLight ? "text-amber-800" : "text-amber-400") : (isLight ? "text-slate-800" : "text-slate-200")}>
                                       {percentNum}
                                     </span>
-                                    <span className="text-[10px] font-bold text-slate-400">%</span>
+                                    <span className={`text-[10px] font-bold ${isLight ? "text-slate-500" : "text-slate-400"}`}>%</span>
                                   </div>
-                                  <div className="text-[10px] font-bold text-emerald-400 leading-tight">
+                                  <div className={`text-[10px] font-bold ${isLight ? "text-emerald-700" : "text-emerald-400"} leading-tight`}>
                                     {cand.votes} votes
                                   </div>
                                 </>
                               ) : (
                                 <div>
                                   {isLeader ? (
-                                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded-md border border-emerald-500/30 inline-flex items-center gap-1 shadow-sm">
-                                      <Sparkles className="w-2.5 h-2.5 text-amber-400" /> Leading
+                                    <span className={`text-[10px] font-bold ${
+                                      isLight
+                                        ? "text-emerald-800 bg-emerald-100 border border-emerald-300"
+                                        : "text-emerald-400 bg-emerald-500/15 border border-emerald-500/30"
+                                    } px-2 py-0.5 rounded-md inline-flex items-center gap-1 shadow-sm`}>
+                                      <Sparkles className={`w-2.5 h-2.5 ${isLight ? "text-amber-600" : "text-amber-400"}`} /> Leading
                                     </span>
                                   ) : (
-                                    <span className="text-[10px] font-medium text-slate-500 px-1.5 py-0.5">
+                                    <span className={`text-[10px] font-medium ${isLight ? "text-slate-500" : "text-slate-500"} px-1.5 py-0.5`}>
                                       Candidate
                                     </span>
                                   )}
@@ -433,9 +490,11 @@ export const LiveCollationDisplay = ({ onClose }) => {
                             </div>
                           </div>
 
-                          {/* Dynamic Green Progress Bar (compact) */}
+                          {/* Dynamic Green Progress Bar */}
                           <div
-                            className={`w-full bg-slate-950 rounded-full overflow-hidden border border-slate-800/80 ${
+                            className={`w-full ${
+                              isLight ? "bg-slate-200 border-slate-300" : "bg-slate-950 border-slate-800/80"
+                            } rounded-full overflow-hidden border ${
                               density === "compact" ? "h-1.5 mt-1.5" : "h-2 mt-2"
                             }`}
                           >
@@ -456,21 +515,21 @@ export const LiveCollationDisplay = ({ onClose }) => {
       </main>
 
       {/* Broadcast Footer */}
-      <footer className="border-t border-slate-800 bg-[#0a101f] py-2.5 px-4 md:px-6 text-center text-xs text-slate-500">
+      <footer className={`border-t ${isLight ? "border-slate-200 bg-white text-slate-600" : "border-slate-800 bg-[#0a101f] text-slate-500"} py-2.5 px-4 md:px-6 text-center text-xs`}>
         <div className="max-w-[1920px] mx-auto flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="font-semibold text-slate-400 text-[11px] md:text-xs">
+            <CheckCircle2 className={`w-3.5 h-3.5 ${isLight ? "text-emerald-600" : "text-emerald-400"}`} />
+            <span className={`font-semibold ${isLight ? "text-slate-700" : "text-slate-400"} text-[11px] md:text-xs`}>
               National High School Electoral Commission Certified Live Collation System
             </span>
           </div>
 
-          <div className="flex items-center gap-3 text-[10px] md:text-[11px] text-slate-400">
+          <div className={`flex items-center gap-3 text-[10px] md:text-[11px] ${isLight ? "text-slate-600" : "text-slate-400"}`}>
             <span>Official Grounds Projector Display</span>
             <span>•</span>
             <span>Cryptographically Verified Ballots</span>
             <span>•</span>
-            <span className="font-mono text-amber-400">{activeElection?.code || "N/A"}</span>
+            <span className={`font-mono ${isLight ? "text-amber-700 font-bold" : "text-amber-400"}`}>{activeElection?.code || "N/A"}</span>
           </div>
         </div>
       </footer>

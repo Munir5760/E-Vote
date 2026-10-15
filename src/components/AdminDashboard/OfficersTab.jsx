@@ -417,19 +417,19 @@ export const OfficersTab = () => {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="glass-panel max-w-md w-full my-auto max-h-[calc(100vh-2rem)] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden"
+            className="glass-panel modal-surface max-w-md w-full my-auto max-h-[calc(100vh-2rem)] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden"
           >
             {/* Pinned Header */}
-            <div className="shrink-0 p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 flex items-start justify-between gap-3">
+            <div className="shrink-0 p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 modal-header flex items-start justify-between gap-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-500 flex items-center justify-center font-bold shrink-0">
                   <UserPlus className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-white text-base">
+                  <h3 className="font-extrabold text-slate-900 dark:text-white text-base">
                     Recruit EC Polling Officer
                   </h3>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
                     Create official polling station credentials for student accreditation.
                   </p>
                 </div>
@@ -437,7 +437,7 @@ export const OfficersTab = () => {
               <button
                 type="button"
                 onClick={() => setShowRecruitModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -531,7 +531,7 @@ export const OfficersTab = () => {
               </div>
 
               {/* Pinned Footer */}
-              <div className="shrink-0 px-4 sm:px-5 py-3 border-t border-slate-800 bg-slate-900/90 flex items-center justify-end gap-2">
+              <div className="shrink-0 px-4 sm:px-5 py-3 border-t border-slate-800 bg-slate-900/90 modal-footer flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowRecruitModal(false)}
@@ -559,19 +559,19 @@ export const OfficersTab = () => {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="glass-panel max-w-sm w-full my-auto max-h-[calc(100vh-2rem)] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden"
+            className="glass-panel modal-surface max-w-sm w-full my-auto max-h-[calc(100vh-2rem)] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden"
           >
-            <div className="shrink-0 p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 flex items-start justify-between gap-3">
+            <div className="shrink-0 p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 modal-header flex items-start justify-between gap-3">
               <div className="flex items-center gap-2">
-                <RotateCcw className="w-4 h-4 text-amber-400 shrink-0" />
-                <h3 className="font-extrabold text-white text-base">
+                <RotateCcw className="w-4 h-4 text-amber-500 shrink-0" />
+                <h3 className="font-extrabold text-slate-900 dark:text-white text-base">
                   Reset Officer Password
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowResetModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -579,28 +579,28 @@ export const OfficersTab = () => {
 
             <form onSubmit={handleResetPasswordSubmit} className="flex-1 flex flex-col min-h-0">
               <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 text-xs custom-modal-scroll">
-                <p className="text-slate-400">
+                <p className="text-slate-600 dark:text-slate-400">
                   Set a new default password for{" "}
-                  <strong className="text-white">{selectedOfficerForReset.name}</strong> (
+                  <strong className="text-slate-900 dark:text-white">{selectedOfficerForReset.name}</strong> (
                   {selectedOfficerForReset.desk}).
                 </p>
 
                 <div>
-                  <label className="block font-bold text-slate-300 uppercase mb-1">
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
                     New Default Password
                   </label>
                   <input
                     type="text"
                     value={newDefaultPass}
                     onChange={(e) => setNewDefaultPass(e.target.value)}
-                    className="form-input text-xs py-2 px-3 bg-slate-900 border-slate-700 text-amber-400 font-mono font-bold w-full"
+                    className="form-input text-xs py-2 px-3 bg-slate-900 border-slate-700 text-amber-600 dark:text-amber-400 font-mono font-bold w-full"
                     required
                     autoFocus
                   />
                 </div>
               </div>
 
-              <div className="shrink-0 px-4 sm:px-5 py-3 border-t border-slate-800 bg-slate-900/90 flex items-center justify-end gap-2">
+              <div className="shrink-0 px-4 sm:px-5 py-3 border-t border-slate-800 bg-slate-900/90 modal-footer flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowResetModal(false)}
@@ -628,58 +628,58 @@ export const OfficersTab = () => {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="glass-panel max-w-md w-full my-auto max-h-[calc(100vh-2rem)] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden text-center"
+            className="glass-panel modal-surface max-w-md w-full my-auto max-h-[calc(100vh-2rem)] flex flex-col border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-hidden text-center"
           >
-            <div className="shrink-0 p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 flex items-center justify-between">
+            <div className="shrink-0 p-4 sm:p-5 border-b border-slate-800 bg-slate-900/90 modal-header flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                <h3 className="text-base font-black text-white">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                <h3 className="text-base font-black text-slate-900 dark:text-white">
                   EC Officer Recruited Successfully!
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIssuedSlipOfficer(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 custom-modal-scroll">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-600 dark:text-emerald-400">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
 
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-600 dark:text-slate-400">
                 Hand these official polling station credentials to the recruited officer:
               </p>
 
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-left space-y-2 font-mono text-xs">
-                <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
-                  <span className="text-slate-400">School:</span>
-                  <span className="text-white font-bold">{activeSchool?.name || "School"}</span>
+              <div className="voting-slip-card p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-left space-y-2 font-mono text-xs shadow-sm">
+                <div className="flex justify-between border-b border-slate-200 dark:border-slate-800/80 pb-1.5">
+                  <span className="text-slate-500 dark:text-slate-400">School:</span>
+                  <span className="text-slate-900 dark:text-white font-bold">{activeSchool?.name || "School"}</span>
                 </div>
-                <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
-                  <span className="text-slate-400">Officer Name:</span>
-                  <span className="text-emerald-400 font-bold">{issuedSlipOfficer.name}</span>
+                <div className="flex justify-between border-b border-slate-200 dark:border-slate-800/80 pb-1.5">
+                  <span className="text-slate-500 dark:text-slate-400">Officer Name:</span>
+                  <span className="text-emerald-700 dark:text-emerald-400 font-bold">{issuedSlipOfficer.name}</span>
                 </div>
-                <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
-                  <span className="text-slate-400">Assigned Desk:</span>
-                  <span className="text-white">{issuedSlipOfficer.desk}</span>
+                <div className="flex justify-between border-b border-slate-200 dark:border-slate-800/80 pb-1.5">
+                  <span className="text-slate-500 dark:text-slate-400">Assigned Desk:</span>
+                  <span className="text-slate-900 dark:text-white font-medium">{issuedSlipOfficer.desk}</span>
                 </div>
-                <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
-                  <span className="text-slate-400">Username:</span>
-                  <span className="text-amber-400 font-bold">{issuedSlipOfficer.username}</span>
+                <div className="flex justify-between border-b border-slate-200 dark:border-slate-800/80 pb-1.5">
+                  <span className="text-slate-500 dark:text-slate-400">Username:</span>
+                  <span className="text-amber-700 dark:text-amber-400 font-bold">{issuedSlipOfficer.username}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Default Password:</span>
-                  <span className="text-teal-400 font-bold">{issuedSlipOfficer.password}</span>
+                  <span className="text-slate-500 dark:text-slate-400">Default Password:</span>
+                  <span className="text-teal-700 dark:text-teal-400 font-bold">{issuedSlipOfficer.password}</span>
                 </div>
               </div>
             </div>
 
-            <div className="shrink-0 px-4 sm:px-5 py-3 border-t border-slate-800 bg-slate-900/90 flex items-center justify-center gap-2">
+            <div className="shrink-0 px-4 sm:px-5 py-3 border-t border-slate-800 bg-slate-900/90 modal-footer flex items-center justify-center gap-2">
               <button
                 type="button"
                 onClick={() => handleCopyCredentials(issuedSlipOfficer)}

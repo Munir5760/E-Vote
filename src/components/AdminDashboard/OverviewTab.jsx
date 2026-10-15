@@ -173,15 +173,15 @@ export const OverviewTab = () => {
 
         {/* Election Controls & Delete Option */}
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <div className="flex items-center gap-2 bg-slate-950 p-2 rounded-xl border border-slate-800">
-            <span className="text-xs font-semibold text-slate-400 px-2">Status:</span>
+          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-950 p-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 px-2">Status:</span>
 
             <button
               onClick={() => toggleElectionSessionStatus(activeElection.id, "not_started")}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
                 activeElection?.status === "not_started" || !activeElection?.status
-                  ? "bg-slate-700 text-amber-300 shadow-lg"
-                  : "bg-slate-900 text-slate-400 hover:text-white"
+                  ? "bg-slate-700 text-amber-300 shadow-md"
+                  : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-transparent"
               }`}
             >
               <Clock className="w-3.5 h-3.5" /> Inactive
@@ -191,8 +191,8 @@ export const OverviewTab = () => {
               onClick={() => toggleElectionSessionStatus(activeElection.id, "active")}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
                 activeElection?.status === "active"
-                  ? "bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-950"
-                  : "bg-slate-900 text-slate-400 hover:text-white"
+                  ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                  : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-transparent"
               }`}
             >
               <Play className="w-3.5 h-3.5" /> Start / Live
@@ -202,8 +202,8 @@ export const OverviewTab = () => {
               onClick={() => toggleElectionSessionStatus(activeElection.id, "paused")}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
                 activeElection?.status === "paused"
-                  ? "bg-amber-500 text-slate-950 shadow-lg shadow-amber-950"
-                  : "bg-slate-900 text-slate-400 hover:text-white"
+                  ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
+                  : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-transparent"
               }`}
             >
               <Pause className="w-3.5 h-3.5" /> Pause
@@ -213,8 +213,8 @@ export const OverviewTab = () => {
               onClick={() => toggleElectionSessionStatus(activeElection.id, "ended")}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
                 activeElection?.status === "ended"
-                  ? "bg-red-500 text-white shadow-lg shadow-red-950"
-                  : "bg-slate-900 text-slate-400 hover:text-white"
+                  ? "bg-red-500 text-white shadow-md shadow-red-500/20"
+                  : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-transparent"
               }`}
             >
               <Lock className="w-3.5 h-3.5" /> Seal Election

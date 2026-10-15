@@ -70,13 +70,13 @@ export const VoteReceipt = ({ student, receiptData, school }) => {
         </p>
 
         {/* Official Printable Receipt Card */}
-        <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 text-left space-y-4 shadow-inner">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="voting-slip-card p-6 rounded-2xl border border-slate-700 text-left space-y-4 shadow-md">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
             <div className="flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-amber-400" />
+              <Building2 className="w-5 h-5 text-amber-500" />
               <div>
-                <div className="text-sm font-bold text-white">{school.name}</div>
-                <div className="text-[10px] text-slate-400">Official Prefectural Election 2026</div>
+                <div className="text-sm font-bold text-slate-900 dark:text-white">{school.name}</div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400">Official Prefectural Election 2026</div>
               </div>
             </div>
             <span className="badge badge-live">SEALED</span>
@@ -85,37 +85,37 @@ export const VoteReceipt = ({ student, receiptData, school }) => {
           <div className="grid grid-cols-2 gap-4 text-xs">
             <div>
               <span className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Voter Name</span>
-              <div className="text-white font-bold">{student.fullName}</div>
+              <div className="text-slate-900 dark:text-white font-bold">{student.fullName}</div>
             </div>
             <div>
               <span className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Index Number</span>
-              <div className="text-amber-400 font-mono font-bold">{student.indexNumber}</div>
+              <div className="text-amber-600 dark:text-amber-400 font-mono font-bold">{student.indexNumber}</div>
             </div>
             <div>
               <span className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Form / Class</span>
-              <div className="text-slate-300">{student.form}</div>
+              <div className="text-slate-700 dark:text-slate-300 font-medium">{student.form}</div>
             </div>
             <div>
               <span className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Dormitory House</span>
-              <div className="text-slate-300">{student.house}</div>
+              <div className="text-slate-700 dark:text-slate-300 font-medium">{student.house}</div>
             </div>
           </div>
 
           {/* Verification Code Box */}
-          <div className="mt-4 p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-3">
+          <div className="mt-4 p-4 rounded-xl otp-badge-box flex items-center justify-between gap-3">
             <div>
-              <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Verification Receipt Code
+              <div className="otp-code-label text-[10px] uppercase font-bold tracking-wider flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Verification Receipt Code
               </div>
-              <div className="text-lg font-mono font-extrabold text-emerald-400 tracking-widest mt-0.5">
+              <div className="text-lg font-mono font-extrabold otp-code-text tracking-widest mt-0.5">
                 {verificationCode}
               </div>
-              <div className="text-[10px] text-slate-500 mt-1">
+              <div className="otp-code-sub text-[10px] mt-1">
                 Recorded: {new Date(votedAtTime).toLocaleString()}
               </div>
             </div>
 
-            <div className="w-12 h-12 bg-white p-1 rounded-lg shrink-0 flex items-center justify-center">
+            <div className="w-12 h-12 bg-white p-1 rounded-lg shrink-0 flex items-center justify-center shadow-sm">
               <QrCode className="w-10 h-10 text-slate-950" />
             </div>
           </div>

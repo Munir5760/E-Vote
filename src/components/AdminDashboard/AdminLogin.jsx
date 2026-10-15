@@ -36,13 +36,13 @@ export const AdminLogin = ({ onClose }) => {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="glass-panel max-w-md w-full my-auto max-h-[calc(100vh-2rem)] flex flex-col p-6 lg:p-8 border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-y-auto custom-modal-scroll"
+        className="glass-panel modal-surface max-w-md w-full my-auto max-h-[calc(100vh-2rem)] flex flex-col p-6 lg:p-8 border-slate-700 shadow-2xl relative animate-fadeIn rounded-2xl overflow-y-auto custom-modal-scroll"
       >
         {onClose && (
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-4 right-4 text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors"
+            className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 dark:hover:text-white p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
             title="Close (Esc)"
           >
             <X className="w-5 h-5" />
